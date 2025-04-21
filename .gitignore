@@ -5,4 +5,5 @@ ros2_ws/install/
 ros2_ws/log/
 
 # Ignore pycache folders
-__pycache__/
+**/__pycache__/
+**/*.pyc
