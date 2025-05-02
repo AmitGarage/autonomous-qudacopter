@@ -25,6 +25,7 @@ setup(
     entry_points={
         'console_scripts': [
             'offboard_control = offboard.offboard_control:main',
+            'offboard_control_obstacle = offboard.offboard_control_obstacle:main',
         ],
     },
 )
