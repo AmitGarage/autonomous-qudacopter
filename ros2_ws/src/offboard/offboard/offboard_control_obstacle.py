@@ -46,7 +46,7 @@ class OffboardControl(Node):
         self.vehicle_local_position = VehicleLocalPosition()
         self.vehicle_status = VehicleStatus()
         self.base_distance_factor = 10
-        self.takeoff_height = -5.0
+        self.takeoff_height = -10.0
         self.forward_distance_x = 5.0*self.base_distance_factor
         self.forward_obstract_distance = [ "x" , 0.0 ]
         self.continue_direction = [0.0,0.0]
@@ -126,7 +126,7 @@ class OffboardControl(Node):
                 #     if front_obstacle_found >= 2 :
                 #         if 
 
-                if front_obstacle_found > 0 and front_obstacle_found <= self.previous_front_obstacle_found and self.continue_direction[1] != 0 :
+                if front_obstacle_found > 0 and front_obstacle_found <= self.previous_front_obstacle_found and self.continue_direction[1] != 0 and left_minimum >= 100 and right_minimum >= 100 and back_minimum >= 100 :
                     self.publish_position_setpoint("position", self.vehicle_local_position.x,self.vehicle_local_position.y+self.continue_direction[1], self.vehicle_local_position.z,self.yaw_angle)
                     self.get_logger().info(f'Continue in {self.continue_direction[1]} direction - {self.vehicle_local_position.x} - {self.vehicle_local_position.y} - {self.vehicle_local_position.z}')
                 elif front_obstacle_found >= 2 and left_obstacle_found >= 2 and right_obstacle_found >= 2 and left_obstacle_found <= right_obstacle_found :
@@ -148,7 +148,7 @@ class OffboardControl(Node):
                     self.continue_direction[1] = 1.0
                     self.publish_position_setpoint("position", self.vehicle_local_position.x,self.vehicle_local_position.y+self.continue_direction[1], self.vehicle_local_position.z,self.yaw_angle)
                     self.get_logger().info(f'Going right - {self.vehicle_local_position.x} - {self.vehicle_local_position.y} - {self.vehicle_local_position.z}')
-                elif front_obstacle_found < 1 and left_minimum >= 50 and right_minimum >= 50 and back_minimum >= 50:
+                elif front_obstacle_found < 1 and left_minimum >= 100 and right_minimum >= 100 and back_minimum >= 100:
                     self.get_logger().info(f'Forward obstacle cleared - {self.vehicle_local_position.x} - {self.vehicle_local_position.y} - {self.vehicle_local_position.z}')
                     self.obstacle_found = False
                     self.forward_obstract_distance[1] = 0.0
@@ -161,37 +161,37 @@ class OffboardControl(Node):
 
             
             elif self.forward_obstract_distance[0] == "y" :
-                self.get_logger().info(f'4m obstacles : {back_obstacle_found} - {left_obstacle_found} - {front_obstacle_found} - {right_obstacle_found}')
-                if front_obstacle_found > 0 and front_obstacle_found <= self.previous_front_obstacle_found and self.continue_direction[1] != 0.0 :
+                self.get_logger().info(f'4m obstacles : {back_obstacle_found} - {left_obstacle_found} - {front_obstacle_found} - {right_obstacle_found} - {all_angles_distance}')
+                if front_obstacle_found > 0 and front_obstacle_found <= self.previous_front_obstacle_found and self.continue_direction[0] != 0.0 and left_minimum >= 100 and right_minimum >= 100 and back_minimum >= 100:
                     self.publish_position_setpoint("position", self.vehicle_local_position.x+self.continue_direction[0],self.vehicle_local_position.y, self.vehicle_local_position.z,self.yaw_angle)
-                    self.get_logger().info(f'Continue in {self.continue_direction[0]} direction')
+                    self.get_logger().info(f'y Continue in {self.continue_direction[0]} direction - {all_angles_distance}')
                 elif front_obstacle_found >= 2 and left_obstacle_found >= 2 and right_obstacle_found >= 2 and left_obstacle_found <= right_obstacle_found :
                     self.publish_position_setpoint("position", self.vehicle_local_position.x-1,self.vehicle_local_position.y, self.vehicle_local_position.z,self.yaw_angle)
                     self.continue_direction[0] = -1.0
-                    self.get_logger().info(f'Going left')
+                    self.get_logger().info(f'Going left - {all_angles_distance}')
                 elif front_obstacle_found >= 2 and left_obstacle_found >= 2 and right_obstacle_found >= 2 and left_obstacle_found >= right_obstacle_found :
                     self.publish_position_setpoint("position", self.vehicle_local_position.x+1,self.vehicle_local_position.y, self.vehicle_local_position.z,self.yaw_angle)
                     self.continue_direction[0] = 1.0
-                    self.get_logger().info(f'Going right')
+                    self.get_logger().info(f'Going right - {all_angles_distance}')
                 elif front_obstacle_found >= 2 and left_obstacle_found == right_obstacle_found and self.continue_direction[0] != 0.0 :
                     self.publish_position_setpoint("position", self.vehicle_local_position.x+self.continue_direction[0],self.vehicle_local_position.y, self.vehicle_local_position.z,self.yaw_angle)
-                    self.get_logger().info(f'Continue in {self.continue_direction[0]} direction')
-                elif left_obstacle_found < 2 and (( right_obstacle_found >= 2 ) or ( right_obstacle_found < 2 and left_obstacle_found < right_obstacle_found ) ) and front_obstacle_found >= 2:
+                    self.get_logger().info(f'Continue in {self.continue_direction[0]} direction - {all_angles_distance}')
+                elif left_obstacle_found < 2 and (( right_obstacle_found >= 2 ) or ( right_obstacle_found < 2 and left_obstacle_found <= right_obstacle_found ) ) and front_obstacle_found >= 2:
                     self.publish_position_setpoint("position", self.vehicle_local_position.x-1,self.vehicle_local_position.y, self.vehicle_local_position.z,self.yaw_angle)
                     self.continue_direction[0] = -1.0
-                    self.get_logger().info(f'Going left')
-                elif right_obstacle_found < 2 and (( left_obstacle_found >= 2 ) or ( left_obstacle_found < 2 and right_obstacle_found < left_obstacle_found ) ) and front_obstacle_found >= 2:
+                    self.get_logger().info(f'Going left - {all_angles_distance}')
+                elif right_obstacle_found < 2 and (( left_obstacle_found >= 2 ) or ( left_obstacle_found < 2 and right_obstacle_found <= left_obstacle_found ) ) and front_obstacle_found >= 2:
                     self.publish_position_setpoint("position", self.vehicle_local_position.x+1,self.vehicle_local_position.y, self.vehicle_local_position.z,self.yaw_angle)
                     self.continue_direction[0] = 1.0
-                    self.get_logger().info(f'Going right')
-                elif front_obstacle_found < 1 and left_minimum >= 50 and right_minimum >= 50 and back_minimum >= 50:
+                    self.get_logger().info(f'Going right - {all_angles_distance}')
+                elif front_obstacle_found < 1 and left_minimum >= 100 and right_minimum >= 100 and back_minimum >= 100:
                     self.get_logger().info(f'Forward obstacle cleared')
                     self.obstacle_found = False
                     self.forward_obstract_distance[1] = 0.0
                 else :
                     if self.continue_direction[0] != 0.0 :
                         self.publish_position_setpoint("position", self.vehicle_local_position.x+self.continue_direction[0],self.vehicle_local_position.y, self.vehicle_local_position.z,self.yaw_angle)
-                        self.get_logger().info(f'Continue in {self.continue_direction[0]} direction')
+                        self.get_logger().info(f'Continue in {self.continue_direction[0]} direction - {all_angles_distance}')
                     else :
                         self.get_logger().info(f'Continue direction not set')
         self.previous_front_obstacle_found = front_obstacle_found
@@ -210,10 +210,10 @@ class OffboardControl(Node):
 
     def obstacle_and_direction( self, msg, threshold ):
         msg = msg.distances.tolist()
-        obstacle_distances_right = msg[7:11] #msg[:18] #msg[:8]+msg[-8:]
-        obstacle_distances_back = msg[25:29] #msg[8:34]
-        obstacle_distances_left = msg[43:47] #msg[34:50]
-        obstacle_distances_front = msg[61:65]
+        obstacle_distances_right = msg[5:13] #msg[:18] #msg[:8]+msg[-8:]
+        obstacle_distances_back = msg[23:31] #msg[8:34]
+        obstacle_distances_left = msg[41:49] #msg[34:50]
+        obstacle_distances_front = msg[59:67]
         # obstacle_distances_centre = msg[61:65]
         back_obstacle_found = len([*filter(lambda x: x < threshold, obstacle_distances_back)])
         left_obstacle_found = len([*filter(lambda x: x < threshold, obstacle_distances_left)])
@@ -449,7 +449,7 @@ class OffboardControl(Node):
                     self.forward_obstract_distance[0] = "y"
                     self.obstacle_found = True
                 elif ( not self.y_achieved ) and round(self.vehicle_local_position.y,0) != 0.0:
-                    self.publish_position_setpoint("position", 0.0,self.vehicle_local_position.y-2, self.takeoff_height,self.yaw_angle)
+                    self.publish_position_setpoint("position", self.vehicle_local_position.x,self.vehicle_local_position.y-2, self.takeoff_height,self.yaw_angle)
                 elif ( not self.y_achieved ) and round(self.vehicle_local_position.y,0) == 0.0 :
                     self.get_logger().info(f"{self.square_check} square completed - {self.vehicle_local_position.x} - {self.vehicle_local_position.y} - {self.vehicle_local_position.z}")
                     self.square_check += 1
