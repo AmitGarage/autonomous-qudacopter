@@ -8,6 +8,7 @@ import time
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+import shutil
 # import matplotlib
 # matplotlib.use('QtAgg')
 import json
@@ -89,9 +90,16 @@ class OffboardControl(Node):
 
         obstacle_distances = [(distance_idx,lidar_msg.distances[distance_idx]) for distance_idx in range(len(lidar_msg.distances)) if lidar_msg.distances[distance_idx] < 601]
 
+        # self.get_logger().info(f'obstacle_distances - {obstacle_distances}')
         for obstacle_distance in obstacle_distances :
-            cos_value = np.cos(45 + (-1*(obstacle_distance[0]*lidar_msg.increment)))
-            sin_value = np.sin(45 + (-1*(obstacle_distance[0]*lidar_msg.increment)))
+            if 45+(-1*obstacle_distance[0]*lidar_msg.increment) < 0 :
+                radians = math.radians(360 + 45 + (-1*(obstacle_distance[0]*lidar_msg.increment)))
+                cos_value = np.cos(radians)
+                sin_value = np.sin(radians)
+            else :
+                radians = math.radians(45 + (-1*(obstacle_distance[0]*lidar_msg.increment)))
+                cos_value = np.cos(radians)
+                sin_value = np.sin(radians)
             relative_obstacle_x = (obstacle_distance[1]/100)*cos_value
             relative_obstacle_y = (obstacle_distance[1]/100)*sin_value
             absolute_obstacle_x = round( relative_obstacle_x + self.vehicle_local_position.x , 2 )
@@ -100,18 +108,19 @@ class OffboardControl(Node):
             self.x_data.append(absolute_obstacle_x)
             self.y_data.append(absolute_obstacle_y)
 
-        self.get_logger().info(f'lidar distance - {lidar_msg.distances}')
-        self.get_logger().info(f'lidar angle - {[idx*lidar_msg.increment for idx in range(len(lidar_msg.distances))]}')
-        self.get_logger().info(f'lidar angle - {[(360 + 45 - (idx*lidar_msg.increment)) if 45+(-1*idx*lidar_msg.increment) < 0 else 45+(-1*idx*lidar_msg.increment) for idx in range(len(lidar_msg.distances))]}')
-        self.get_logger().info(f'local position - {self.vehicle_local_position.x} - {self.vehicle_local_position.y}')
-        self.get_logger().info(f'x_data - {self.x_data[-len(obstacle_distances):]}')
-        self.get_logger().info(f'y_data - {self.y_data[-len(obstacle_distances):]}')
+        # self.get_logger().info(f'lidar distance - {lidar_msg.distances}')
+        # self.get_logger().info(f'lidar angle - {[idx*lidar_msg.increment for idx in range(len(lidar_msg.distances))]}')
+        # self.get_logger().info(f'lidar angle - {[(360 + 45 - (idx*lidar_msg.increment)) if 45+(-1*idx*lidar_msg.increment) < 0 else 45+(-1*idx*lidar_msg.increment) for idx in range(len(lidar_msg.distances))]}')
+        # self.get_logger().info(f'local position - {self.vehicle_local_position.x} - {self.vehicle_local_position.y}')
+        # self.get_logger().info(f'x_data - {self.x_data[-len(obstacle_distances):]}')
+        # self.get_logger().info(f'y_data - {self.y_data[-len(obstacle_distances):]}')
         map_data = {
             "x" : self.x_data,
             "y" : self.y_data
         }
 
-        with open("/home/amit-singh/Downloads/qudacopter/map_data.json", "w") as outfile:
+        shutil.copy("/home/amit-singh/Downloads/qudacopter/tmp_map_data.json", "/home/amit-singh/Downloads/qudacopter/map_data.json")
+        with open("/home/amit-singh/Downloads/qudacopter/tmp_map_data.json", "w") as outfile:
             json.dump(map_data, outfile,indent=4)
         # self.axes.scatter(vechile_position_x,vechile_position_y,c="#fd72c0",marker=".",s=5)
 
