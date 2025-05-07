@@ -67,7 +67,6 @@ class OffboardControl(Node):
         self.x_achieved = False
         self.y_achieved = False
         self.yaw_angle = 1.57079
-        self.yaw_angle_degree  = 90
         self.previous_front_obstacle_found = 0.0
         self.x_rotate_achieved = False
 
@@ -115,13 +114,13 @@ class OffboardControl(Node):
             self.x_data.append(absolute_obstacle_x)
             self.y_data.append(absolute_obstacle_y)
 
-        self.get_logger().info(f'lidar distance - {lidar_msg.distances}')
+        # self.get_logger().info(f'lidar distance - {lidar_msg.distances}')
         # self.get_logger().info(f'lidar angle - {[idx*lidar_msg.increment for idx in range(len(lidar_msg.distances))]}')
         # self.get_logger().info(f'lidar angle - {[360 + 45 + 90 - self.yaw_angle_degree + (-1*(idx*lidar_msg.increment)) if 45 + 90 - self.yaw_angle_degree + (-1*idx*lidar_msg.increment) < 0 else 45 + 90 - self.yaw_angle_degree + (-1*idx*lidar_msg.increment) for idx in range(len(lidar_msg.distances))]}')
-        self.get_logger().info(f'lidar angle - {[math.degrees(6.28319 + 0.785398 + 1.5708 - self.vehicle_local_position.heading - - math.radians(idx*lidar_msg.increment)) if 0.785398 + 1.5708 - self.vehicle_local_position.heading - math.radians(idx*lidar_msg.increment) < 0 else math.degrees(0.785398 + 1.5708 - self.vehicle_local_position.heading - math.radians(idx*lidar_msg.increment)) for idx in range(len(lidar_msg.distances))]}')
-        self.get_logger().info(f'local position - {self.vehicle_local_position.x} - {self.vehicle_local_position.y}')
-        self.get_logger().info(f'x_data - {self.x_data[-len(obstacle_distances):]}')
-        self.get_logger().info(f'y_data - {self.y_data[-len(obstacle_distances):]}')
+        # self.get_logger().info(f'lidar angle - {[math.degrees(6.28319 + 0.785398 + 1.5708 - self.vehicle_local_position.heading - - math.radians(idx*lidar_msg.increment)) if 0.785398 + 1.5708 - self.vehicle_local_position.heading - math.radians(idx*lidar_msg.increment) < 0 else math.degrees(0.785398 + 1.5708 - self.vehicle_local_position.heading - math.radians(idx*lidar_msg.increment)) for idx in range(len(lidar_msg.distances))]}')
+        # self.get_logger().info(f'local position - {self.vehicle_local_position.x} - {self.vehicle_local_position.y}')
+        # self.get_logger().info(f'x_data - {self.x_data[-len(obstacle_distances):]}')
+        # self.get_logger().info(f'y_data - {self.y_data[-len(obstacle_distances):]}')
         map_data = {
             "x" : self.x_data,
             "y" : self.y_data,
@@ -157,7 +156,7 @@ class OffboardControl(Node):
         # self.get_logger().info(f'All Obstacle distance: {msg}') 
         back_obstacle_found,left_obstacle_found,front_obstacle_found,right_obstacle_found,left_minimum,right_minimum,back_minimum = self.obstacle_and_direction( msg , 300)
         back_obstacle_found_5,left_obstacle_found_5,front_obstacle_found_5,right_obstacle_found_5,_,_,_ = self.obstacle_and_direction( msg , 500)
-        if ( not self.obstacle_found ) and self.forward_obstract_distance[1] == 0.0 and ( front_obstacle_found_5 >= 2 ) and (( self.forward_distance_x > 4 ) or ( self.forward_distance_y > 4 )) :
+        if ( not self.obstacle_found ) and self.forward_obstract_distance[1] == 0.0 and ( front_obstacle_found_5 >= 2 ) and (( self.forward_distance_x > 4 ) or ( self.forward_distance_y > 4 ) ) :
             if not self.x_achieved :
 
                 if self.forward_distance_x < 0 and self.vehicle_local_position.x > self.forward_distance_x:
@@ -425,7 +424,6 @@ class OffboardControl(Node):
                     self.get_logger().info(f"{self.square_check} square completed - {self.vehicle_local_position.z}")
                     self.publish_offboard_control_heartbeat_signal("rotate")
                     self.yaw_angle -= 1.57079
-                    self.yaw_angle_degree -= 90
                     # self.publish_position_setpoint("rotate", 0.0, 0.0, self.takeoff_height,self.yaw_angle)
                     self.z_achieved = True
                 # elif self.z_achieved and round(self.vehicle_local_position.heading,2) != round(self.yaw_angle,2):
@@ -469,7 +467,6 @@ class OffboardControl(Node):
                     self.x_achieved = True
                     # self.publish_offboard_control_heartbeat_signal("rotate")
                     self.yaw_angle += 1.57079
-                    self.yaw_angle_degree += 90
                 #     self.publish_position_setpoint("rotate", self.vehicle_local_position.x, self.vehicle_local_position.y, self.takeoff_height,self.yaw_angle)
                 # elif self.x_achieved and ( not self.x_rotate_achieved ) and round(self.vehicle_local_position.heading,2) < round(self.yaw_angle,2)-0.05:
                 #     self.get_logger().info(f"rotating - {self.vehicle_local_position.heading}")
@@ -522,7 +519,6 @@ class OffboardControl(Node):
                         self.x_achieved = False
                 #     self.publish_offboard_control_heartbeat_signal("rotate")
                     self.yaw_angle += 1.57079
-                    self.yaw_angle_degree += 90
                 #     self.publish_position_setpoint("rotate", self.vehicle_local_position.x, self.vehicle_local_position.y, self.takeoff_height,self.yaw_angle)
                 # elif self.y_achieved and round(self.vehicle_local_position.heading,2) != round(self.yaw_angle,2):
                 #     # self.get_logger().info(f"rotating - {self.vehicle_local_position}")
