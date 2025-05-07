@@ -6,6 +6,11 @@ from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPo
 from px4_msgs.msg import OffboardControlMode, TrajectorySetpoint, VehicleCommand, VehicleLocalPosition, VehicleStatus, ObstacleDistance,VehicleAttitude
 import time
 import math
+import numpy as np
+import matplotlib.pyplot as plt
+# import matplotlib
+# matplotlib.use('QtAgg')
+import json
 
 
 class OffboardControl(Node):
@@ -64,6 +69,10 @@ class OffboardControl(Node):
         self.previous_front_obstacle_found = 0.0
         self.x_rotate_achieved = False
 
+        self.x_data = []
+        self.y_data = []
+        # self.fig, self.ax = plt.subplots()
+
         # Create a timer to publish control commands
         self.timer = self.create_timer(0.1, self.timer_callback)
 
@@ -75,6 +84,45 @@ class OffboardControl(Node):
     def vehicle_status_callback(self, vehicle_status):
         """Callback function for vehicle_status topic subscriber."""
         self.vehicle_status = vehicle_status
+
+    def lidar_processing( self , lidar_msg) :
+
+        obstacle_distances = [(distance_idx,lidar_msg.distances[distance_idx]) for distance_idx in range(len(lidar_msg.distances)) if lidar_msg.distances[distance_idx] < 601]
+
+        for obstacle_distance in obstacle_distances :
+            cos_value = np.cos(45 + (-1*(obstacle_distance[0]*lidar_msg.increment)))
+            sin_value = np.sin(45 + (-1*(obstacle_distance[0]*lidar_msg.increment)))
+            relative_obstacle_x = (obstacle_distance[1]/100)*cos_value
+            relative_obstacle_y = (obstacle_distance[1]/100)*sin_value
+            absolute_obstacle_x = round( relative_obstacle_x + self.vehicle_local_position.x , 2 )
+            absolute_obstacle_y = round( relative_obstacle_y + self.vehicle_local_position.y , 2 )
+
+            self.x_data.append(absolute_obstacle_x)
+            self.y_data.append(absolute_obstacle_y)
+
+        self.get_logger().info(f'lidar distance - {lidar_msg.distances}')
+        self.get_logger().info(f'lidar angle - {[idx*lidar_msg.increment for idx in range(len(lidar_msg.distances))]}')
+        self.get_logger().info(f'lidar angle - {[(360 + 45 - (idx*lidar_msg.increment)) if 45+(-1*idx*lidar_msg.increment) < 0 else 45+(-1*idx*lidar_msg.increment) for idx in range(len(lidar_msg.distances))]}')
+        self.get_logger().info(f'local position - {self.vehicle_local_position.x} - {self.vehicle_local_position.y}')
+        self.get_logger().info(f'x_data - {self.x_data[-len(obstacle_distances):]}')
+        self.get_logger().info(f'y_data - {self.y_data[-len(obstacle_distances):]}')
+        map_data = {
+            "x" : self.x_data,
+            "y" : self.y_data
+        }
+
+        with open("/home/amit-singh/Downloads/qudacopter/map_data.json", "w") as outfile:
+            json.dump(map_data, outfile,indent=4)
+        # self.axes.scatter(vechile_position_x,vechile_position_y,c="#fd72c0",marker=".",s=5)
+
+    # def update_plot(self):
+    #     self.ax.clear()
+    #     self.ax.scatter(self.x_data, self.y_data,c="#fd72c0",marker=".",s=5)
+    #     # self.ax.set_xlabel("Time/Index")
+    #     # self.ax.set_ylabel("Data Value")
+    #     self.fig.canvas.draw()
+    #     plt.pause(0.001)
+
     
     def obstacle_distance_callback(self, msg):
         """
@@ -83,6 +131,10 @@ class OffboardControl(Node):
         # self.get_logger().info(f'Obstacle distance: {msg.distances}')  # Print the distance
         # Add your code here to process the obstacle distance data
         all_angles_distance = msg.distances
+        self.lidar_processing( msg )
+        # self.x_data.append(self.vehicle_local_position.x)
+        # self.y_data.append(self.vehicle_local_position.y)
+        # self.update_plot()
         # self.get_logger().info(f'All Obstacle distance: {msg}') 
         back_obstacle_found,left_obstacle_found,front_obstacle_found,right_obstacle_found,left_minimum,right_minimum,back_minimum = self.obstacle_and_direction( msg , 300)
         back_obstacle_found_5,left_obstacle_found_5,front_obstacle_found_5,right_obstacle_found_5,_,_,_ = self.obstacle_and_direction( msg , 500)
@@ -523,6 +575,9 @@ def main(args=None) -> None:
     print('Starting offboard control node...')
     rclpy.init(args=args)
     offboard_control = OffboardControl()
+    # plt.ion()
+    # plt.figure(figsize=(200,200))
+    # plt.show()
     rclpy.spin(offboard_control)
     offboard_control.destroy_node()
     rclpy.shutdown()
