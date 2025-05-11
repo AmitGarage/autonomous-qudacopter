@@ -193,7 +193,7 @@ class OffboardControl(Node):
 
         if ( not self.obstacle_found ) and  (( not self.x_achieved and self.forward_obstract_distance[1] == 0.0 ) or ( not self.y_achieved and self.forward_obstract_distance[2] == 0.0 )) and ( front_obstacle_found_5 >= 2 ) :
             if (front_minimum < ( self.safe_distance_from_qudacopter*2 )) or (right_minimum < ( self.safe_distance_from_qudacopter*2 )) or (back_minimum < ( self.safe_distance_from_qudacopter*2 )) or (left_minimum < ( self.safe_distance_from_qudacopter*2 )) :
-                mid_distance = 0.25
+                mid_distance = -0.25
             elif ( min([front_minimum,right_minimum,back_minimum,left_minimum]) - 100 ) < ( self.safe_distance_from_qudacopter ) :
                 mid_distance = (( min([front_minimum,right_minimum,back_minimum,left_minimum]) - self.safe_distance_from_qudacopter ) - 20 ) / 100
             else:
@@ -640,7 +640,7 @@ class OffboardControl(Node):
                     self.yaw_angle += 1.57079
                     self.forward_obstract_distance[1] = 0.0
                     self.forward_obstract_distance[2] = 0.0
-                    if ( self.vehicle_local_position.y < self.forward_distance_y-0.2 ) or ( self.vehicle_local_position.y > self.forward_distance_y+0.2 ) :
+                    if ( self.vehicle_local_position.y < self.forward_distance_y-0.25 ) or ( self.vehicle_local_position.y > self.forward_distance_y+0.25 ) :
                         self.y_achieved = False
                         self.y_rotate_achieved = False
                     else :
@@ -720,7 +720,7 @@ class OffboardControl(Node):
                     self.yaw_angle -= 1.57079
                     self.forward_obstract_distance[1] = 0.0
                     self.forward_obstract_distance[2] = 0.0
-                    if ( self.vehicle_local_position.x < self.forward_distance_x-0.2 ) or ( self.vehicle_local_position.x > self.forward_distance_x+0.2 ) :
+                    if ( self.vehicle_local_position.x < self.forward_distance_x-0.25 ) or ( self.vehicle_local_position.x > self.forward_distance_x+0.25 ) :
                         self.x_achieved = False
                         self.x_rotate_achieved = False
                     else :
