@@ -616,7 +616,10 @@ class OffboardControl(Node):
                 elif self.z_achieved and round(self.vehicle_local_position.heading,2) == round(self.yaw_angle,2) :
                     self.get_logger().info(f"{self.square_check} {self.vehicle_local_position.heading} rotate completed - {self.vehicle_local_position.x} - {self.vehicle_local_position.y} - {self.vehicle_local_position.z}")
                     self.square_check += 1
-                    self.yaw_angle -= 1.57079
+                    if ( self.forward_distance_x - self.vehicle_local_position.x ) >= 0 :
+                        self.yaw_angle -= 1.57079
+                    else :
+                        self.yaw_angle += 1.57079
                     self.forward_obstract_distance[1] = 0.0
                     self.forward_obstract_distance[2] = 0.0
                     self.intermittent_distance_x = self.vehicle_local_position.x
@@ -716,7 +719,11 @@ class OffboardControl(Node):
                 elif self.x_achieved and ( not self.x_rotate_achieved ) and self.forward_obstract_distance[1] == 0.0 and self.forward_obstract_distance[2] == 0.0 and round(self.vehicle_local_position.heading,2) > round(self.yaw_angle,2)-0.05 and round(self.vehicle_local_position.heading,2) < round(self.yaw_angle,2)+0.05 :
                     self.get_logger().info(f"x {self.square_check} {self.vehicle_local_position.heading} rotate completed - {self.vehicle_local_position.heading} - {self.vehicle_local_position.x} - {self.vehicle_local_position.y} - {self.vehicle_local_position.z}")
                     self.x_rotate_achieved = True
-                    self.yaw_angle += 1.57079
+                    # self.yaw_angle += 1.57079
+                    if ( self.forward_distance_y - self.vehicle_local_position.y ) >= 0 :
+                        self.yaw_angle += 1.57079
+                    else :
+                        self.yaw_angle -= 1.57079
                     self.forward_obstract_distance[1] = 0.0
                     self.forward_obstract_distance[2] = 0.0
                     self.intermittent_distance_x = self.vehicle_local_position.x
@@ -831,7 +838,11 @@ class OffboardControl(Node):
                     self.get_logger().info(f"y {self.square_check} {self.vehicle_local_position.heading} rotate completed - {self.vehicle_local_position.x} - {self.vehicle_local_position.y} - {self.vehicle_local_position.z}")
                     # self.square_check += 1
                     self.y_rotate_achieved = True
-                    self.yaw_angle -= 1.57079
+                    # self.yaw_angle -= 1.57079
+                    if ( self.forward_distance_x - self.vehicle_local_position.x ) >= 0 :
+                        self.yaw_angle -= 1.57079
+                    else :
+                        self.yaw_angle += 1.57079
                     self.forward_obstract_distance[1] = 0.0
                     self.forward_obstract_distance[2] = 0.0
                     self.intermittent_distance_x = self.vehicle_local_position.x
