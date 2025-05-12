@@ -192,10 +192,10 @@ class OffboardControl(Node):
 
 
         if ( not self.obstacle_found ) and  (( not self.x_achieved and self.forward_obstract_distance[1] == 0.0 ) or ( not self.y_achieved and self.forward_obstract_distance[2] == 0.0 )) and ( front_obstacle_found_5 >= 2 ) :
-            if (front_minimum < ( self.safe_distance_from_qudacopter*2 )) or (right_minimum < ( self.safe_distance_from_qudacopter*2 )) or (back_minimum < ( self.safe_distance_from_qudacopter*2 )) or (left_minimum < ( self.safe_distance_from_qudacopter*2 )) :
-                mid_distance = -0.25
-            elif ( min([front_minimum,right_minimum,back_minimum,left_minimum]) - 100 ) < ( self.safe_distance_from_qudacopter ) :
-                mid_distance = (( min([front_minimum,right_minimum,back_minimum,left_minimum]) - self.safe_distance_from_qudacopter ) - 20 ) / 100
+            if ( min([front_minimum,right_minimum,back_minimum,left_minimum]) - 100 ) < ( self.safe_distance_from_qudacopter ) :
+                mid_distance = -(( min([front_minimum,right_minimum,back_minimum,left_minimum]) - self.safe_distance_from_qudacopter ) - 20 ) / 100
+            elif (front_minimum < ( self.safe_distance_from_qudacopter*2 )) or (right_minimum < ( self.safe_distance_from_qudacopter*2 )) or (back_minimum < ( self.safe_distance_from_qudacopter*2 )) or (left_minimum < ( self.safe_distance_from_qudacopter*2 )) :
+                mid_distance = 0.25
             else:
                 mid_distance = 1
 
