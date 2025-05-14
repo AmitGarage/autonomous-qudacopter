@@ -183,23 +183,13 @@ class OffboardControl(Node):
         back_obstacle_found,left_obstacle_found,front_obstacle_found,right_obstacle_found,left_minimum,right_minimum,back_minimum,front_minimum,right_up_corner_distances_minimum,right_down_corner_distances_minimum,left_down_corner_distances_minimum,left_up_corner_distances_minimum,front_left_obstacle_found,front_right_obstacle_found = self.obstacle_and_direction( msg , 300)
         back_obstacle_found_5,left_obstacle_found_5,front_obstacle_found_5,right_obstacle_found_5,_,_,_,_,_,_,_,_,_,_ = self.obstacle_and_direction( msg , 400)
         
-        if self.drone_current_direction[0] :
-            current_direction_x = +1
-        else :
-            current_direction_x = -1
-        if self.drone_current_direction[1] :
-            current_direction_y = +1
-        else :
-            current_direction_y = -1
-
-
         if ( not self.obstacle_found ) and  (( not self.x_achieved and self.forward_obstract_distance[1] == 0.0 ) or ( not self.y_achieved and self.forward_obstract_distance[2] == 0.0 )) and ( front_obstacle_found_5 >= 2 ) :
             if ( min([front_minimum,right_minimum,back_minimum,left_minimum]) - 100 ) < ( self.safe_distance_from_qudacopter ) :
                 mid_distance =  abs(( min([front_minimum,right_minimum,back_minimum,left_minimum]) - self.safe_distance_from_qudacopter ) / 100) + 0.25
             # elif (front_minimum < ( self.safe_distance_from_qudacopter*2 )) or (right_minimum < ( self.safe_distance_from_qudacopter*2 )) or (back_minimum < ( self.safe_distance_from_qudacopter*2 )) or (left_minimum < ( self.safe_distance_from_qudacopter*2 )) :
             #     mid_distance = 0.25
             else:
-                mid_distance = 1
+                mid_distance = -1
 
             if not self.x_achieved :
 
@@ -207,11 +197,11 @@ class OffboardControl(Node):
                 #     self.forward_obstract_distance[1] = self.vehicle_local_position.x-(mid_distance*self.drone_current_direction_sign[0])
                 # elif self.vehicle_local_position.x < self.forward_distance_x:
                 #     self.forward_obstract_distance[1] = self.vehicle_local_position.x+(mid_distance*self.drone_current_direction_sign[0])
-                self.forward_obstract_distance[1] = self.vehicle_local_position.x+(np.sign(self.vehicle_local_position.x)*mid_distance*self.drone_current_direction_sign[0])
+                self.forward_obstract_distance[1] = self.vehicle_local_position.x-(np.sign(self.vehicle_local_position.x)*mid_distance)
                 if (right_minimum < ( self.safe_distance_from_qudacopter*2 )) and (left_minimum > ( self.safe_distance_from_qudacopter*2 )) :
-                    self.forward_obstract_distance[2] = self.vehicle_local_position.y+(-0.25*current_direction_x)
+                    self.forward_obstract_distance[2] = self.vehicle_local_position.y+(-0.25*self.drone_current_direction_sign[0]*np.sign(self.vehicle_local_position.y))
                 elif (right_minimum > ( self.safe_distance_from_qudacopter*2 )) and (left_minimum < ( self.safe_distance_from_qudacopter*2 )) :
-                    self.forward_obstract_distance[2] = self.vehicle_local_position.y+(0.25*current_direction_x)
+                    self.forward_obstract_distance[2] = self.vehicle_local_position.y+(0.25*self.drone_current_direction_sign[0]*np.sign(self.vehicle_local_position.y))
 
             if not self.y_achieved :
                 # self.forward_obstract_distance[1] = self.vehicle_local_position.y-1
@@ -220,20 +210,16 @@ class OffboardControl(Node):
                 #     self.forward_obstract_distance[2] = self.vehicle_local_position.y-(mid_distance*self.drone_current_direction_sign[1])
                 # elif self.vehicle_local_position.y < self.forward_distance_y:
                 #     self.forward_obstract_distance[2] = self.vehicle_local_position.y+(mid_distance*self.drone_current_direction_sign[1])
-                self.forward_obstract_distance[2] = self.vehicle_local_position.y+(np.sign(self.vehicle_local_position.y)*mid_distance*self.drone_current_direction_sign[1])
+                self.forward_obstract_distance[2] = self.vehicle_local_position.y-(np.sign(self.vehicle_local_position.y)*mid_distance)
                 if (right_minimum < ( self.safe_distance_from_qudacopter*2 )) and (left_minimum > ( self.safe_distance_from_qudacopter*2 )) :
-                    self.forward_obstract_distance[1] = self.vehicle_local_position.x+(0.25*self.drone_current_direction_sign[1])
+                    self.forward_obstract_distance[1] = self.vehicle_local_position.x+(0.25*self.drone_current_direction_sign[1]*np.sign(self.vehicle_local_position.x))
                 elif (right_minimum > ( self.safe_distance_from_qudacopter*2 )) and (left_minimum < ( self.safe_distance_from_qudacopter*2 )) :
-                    self.forward_obstract_distance[1] = self.vehicle_local_position.x+(-0.25*self.drone_current_direction_sign[1])
+                    self.forward_obstract_distance[1] = self.vehicle_local_position.x+(-0.25*np.sign(self.vehicle_local_position.x)*self.drone_current_direction_sign[1])
 
             self.get_logger().info(f'Obstacle between traversing : {back_obstacle_found} - {left_obstacle_found} - {front_obstacle_found} - {right_obstacle_found} - {self.forward_obstract_distance[1]} - {self.forward_obstract_distance[2]} - {mid_distance} - {self.x_achieved} - {self.y_achieved}')
         elif self.obstacle_found :
             if self.forward_obstract_distance[0] == "x" :
-                if self.drone_current_direction[0] :
-                    current_direction = +1
-                else :
-                    current_direction = -1
-                self.get_logger().info(f'4m obstacles : {current_direction} - {back_obstacle_found} - {left_obstacle_found} - {front_obstacle_found} - {right_obstacle_found} - {all_angles_distance}')
+                self.get_logger().info(f'4m obstacles : {self.drone_current_direction_sign} - {back_obstacle_found} - {left_obstacle_found} - {front_obstacle_found} - {right_obstacle_found} - {all_angles_distance}')
                 # if left_obstacle_found < 2 and (( right_obstacle_found >= 2 ) or ( right_obstacle_found < 2 and left_obstacle_found <= right_obstacle_found ) ) and front_obstacle_found >= 2:
                 #     self.publish_position_setpoint("position", self.vehicle_local_position.x,self.vehicle_local_position.y+1, self.vehicle_local_position.z,self.yaw_angle)
                 # elif right_obstacle_found < 2 and (( left_obstacle_found >= 2 ) or ( left_obstacle_found < 2 and right_obstacle_found <= left_obstacle_found ) ) and front_obstacle_found >= 2:
@@ -252,103 +238,100 @@ class OffboardControl(Node):
                         self.continue_direction[1] = self.continue_direction[1]/4
                     elif left_minimum >= self.safe_distance_from_qudacopter*2 and right_minimum >= self.safe_distance_from_qudacopter*2 and back_minimum >= self.safe_distance_from_qudacopter*2 and abs(self.continue_direction[1]) == 0.25 :
                         self.continue_direction[1] = self.continue_direction[1]*4
-                    if self.drone_current_direction[0] :
-                        drone_direction = 0.25
-                    else:
-                        drone_direction = -0.25
+ 
                     if front_minimum > ( self.safe_distance_from_qudacopter*2 ) and right_up_corner_distances_minimum < ( self.safe_distance_from_qudacopter*2 ) and right_down_corner_distances_minimum < ( self.safe_distance_from_qudacopter*2 ) and left_minimum > ( self.safe_distance_from_qudacopter*2 ):
-                        self.intermittent_distance_y = self.vehicle_local_position.y-(0.25*self.drone_current_direction_sign[0])
+                        self.intermittent_distance_y = self.vehicle_local_position.y-(0.25*self.drone_current_direction_sign[0]*np.sign(self.vehicle_local_position.y))
                         self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
-                        self.get_logger().info(f'Right up and down corner - Moving left in {+(0.25*self.drone_current_direction_sign[0])} direction - {self.drone_current_direction} - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
+                        self.get_logger().info(f'Right up and down corner - Moving left in {-(0.25*self.drone_current_direction_sign[0]*np.sign(self.vehicle_local_position.y))} direction - {self.drone_current_direction} - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
                     if front_minimum > ( self.safe_distance_from_qudacopter*2 ) and left_up_corner_distances_minimum < ( self.safe_distance_from_qudacopter*2 ) and left_down_corner_distances_minimum < ( self.safe_distance_from_qudacopter*2 ) and right_minimum > ( self.safe_distance_from_qudacopter*2 ):
-                        self.intermittent_distance_y = self.vehicle_local_position.y+(0.25*self.drone_current_direction_sign[0])
+                        self.intermittent_distance_y = self.vehicle_local_position.y+(0.25*self.drone_current_direction_sign[0]*np.sign(self.vehicle_local_position.y))
                         self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
-                        self.get_logger().info(f'Left up and down corner - Moving right in {+(0.25*self.drone_current_direction_sign[0])} direction - {self.drone_current_direction} - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
+                        self.get_logger().info(f'Left up and down corner - Moving right in {+(0.25*self.drone_current_direction_sign[0]*np.sign(self.vehicle_local_position.y))} direction - {self.drone_current_direction} - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
                     elif front_minimum > ( self.safe_distance_from_qudacopter*2 ) and ( (right_down_corner_distances_minimum < ( self.safe_distance_from_qudacopter*2 )) or (left_down_corner_distances_minimum < ( self.safe_distance_from_qudacopter*2 ))) :
-                        self.intermittent_distance_x = self.vehicle_local_position.x+drone_direction
+                        self.intermittent_distance_x = self.vehicle_local_position.x+(0.25*self.drone_current_direction_sign[0]*np.sign(self.vehicle_local_position.x))
                         self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
-                        self.get_logger().info(f'Down corner - Moving up in {drone_direction} direction - {self.drone_current_direction} - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
+                        self.get_logger().info(f'Down corner - Moving up in {+(0.25*self.drone_current_direction_sign[0]*np.sign(self.vehicle_local_position.x))} direction - {self.drone_current_direction} - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
                     elif back_minimum > ( self.safe_distance_from_qudacopter*2 ) and ( (right_up_corner_distances_minimum < ( self.safe_distance_from_qudacopter*2 )) or (left_up_corner_distances_minimum < ( self.safe_distance_from_qudacopter*2 ))) :
-                        self.intermittent_distance_x = self.vehicle_local_position.x+(drone_direction*-1)
+                        self.intermittent_distance_x = self.vehicle_local_position.x-(0.25*self.drone_current_direction_sign[0]*np.sign(self.vehicle_local_position.x))
                         self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
-                        self.get_logger().info(f'Up corner - Moving down in {(drone_direction*-1)} direction - {self.drone_current_direction} - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
+                        self.get_logger().info(f'Up corner - Moving down in {-(0.25*self.drone_current_direction_sign[0]*np.sign(self.vehicle_local_position.x))} direction - {self.drone_current_direction} - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
                     else :
-                        self.intermittent_distance_y = self.vehicle_local_position.y+self.continue_direction[1]
+                        self.intermittent_distance_y = self.vehicle_local_position.y+(self.continue_direction[1]*np.sign(self.vehicle_local_position.y))
                         self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
-                        self.get_logger().info(f'Continue in {self.continue_direction[1]} direction - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
+                        self.get_logger().info(f'Continue in {(self.continue_direction[1]*np.sign(self.vehicle_local_position.y))} direction - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
                 elif front_obstacle_found >= 2 and front_left_obstacle_found <= front_right_obstacle_found :
                     if left_minimum < ( self.safe_distance_from_qudacopter*2 ) or right_minimum < ( self.safe_distance_from_qudacopter*2 ) or back_minimum < ( self.safe_distance_from_qudacopter*2 ) :
-                        self.continue_direction[1] = current_direction*(-0.25)
+                        self.continue_direction[1] = self.drone_current_direction_sign[0]*(-0.25)
                     else :
-                        self.continue_direction[1] = current_direction*(-1.0)
+                        self.continue_direction[1] = self.drone_current_direction_sign[0]*(-1.0)
 
-                    self.intermittent_distance_y = self.vehicle_local_position.y+self.continue_direction[1]
+                    self.intermittent_distance_y = self.vehicle_local_position.y+(self.continue_direction[1]*np.sign(self.vehicle_local_position.y))
                     self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
-                    self.get_logger().info(f'using front Going left : {self.continue_direction[1]} - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
+                    self.get_logger().info(f'using front Going left : {(self.continue_direction[1]*np.sign(self.vehicle_local_position.y))} - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
                 elif front_obstacle_found >= 2 and front_left_obstacle_found >= front_right_obstacle_found :
                     if left_minimum < ( self.safe_distance_from_qudacopter*2 ) or right_minimum < ( self.safe_distance_from_qudacopter*2 ) or back_minimum < ( self.safe_distance_from_qudacopter*2 ) :
-                        self.continue_direction[1] = current_direction*(0.25)
+                        self.continue_direction[1] = self.drone_current_direction_sign[0]*(0.25)
                     else :
-                        self.continue_direction[1] = current_direction*(1.0)
+                        self.continue_direction[1] = self.drone_current_direction_sign[0]*(1.0)
 
-                    self.intermittent_distance_y = self.vehicle_local_position.y+self.continue_direction[1]
+                    self.intermittent_distance_y = self.vehicle_local_position.y+(self.continue_direction[1]*np.sign(self.vehicle_local_position.y))
                     self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.takeoff_height,self.yaw_angle)
-                    self.get_logger().info(f'Using front Going right : {self.continue_direction[1]} - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
+                    self.get_logger().info(f'Using front Going right : {(self.continue_direction[1]*np.sign(self.vehicle_local_position.y))} - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
                 elif front_obstacle_found >= 2 and left_obstacle_found >= 2 and right_obstacle_found >= 2 and left_obstacle_found <= right_obstacle_found :
                     if left_minimum < ( self.safe_distance_from_qudacopter*2 ) or right_minimum < ( self.safe_distance_from_qudacopter*2 ) or back_minimum < ( self.safe_distance_from_qudacopter*2 ) :
-                        self.continue_direction[1] = current_direction*(-0.25)
+                        self.continue_direction[1] = self.drone_current_direction_sign[0]*(-0.25)
                     else :
-                        self.continue_direction[1] = current_direction*(-1.0)
+                        self.continue_direction[1] = self.drone_current_direction_sign[0]*(-1.0)
                     
-                    self.intermittent_distance_y = self.vehicle_local_position.y+self.continue_direction[1]
+                    self.intermittent_distance_y = self.vehicle_local_position.y+(self.continue_direction[1]*np.sign(self.vehicle_local_position.y))
                     self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
-                    self.get_logger().info(f'Going left : {self.continue_direction[1]} - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
+                    self.get_logger().info(f'Going left : {(self.continue_direction[1]*np.sign(self.vehicle_local_position.y))} - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
                 elif front_obstacle_found >= 2 and left_obstacle_found >= 2 and right_obstacle_found >= 2 and left_obstacle_found >= right_obstacle_found :
                     if left_minimum < ( self.safe_distance_from_qudacopter*2 ) or right_minimum < ( self.safe_distance_from_qudacopter*2 ) or back_minimum < ( self.safe_distance_from_qudacopter*2 ) :
-                        self.continue_direction[1] = current_direction*(0.25)
+                        self.continue_direction[1] = self.drone_current_direction_sign[0]*(0.25)
                     else :
-                        self.continue_direction[1] = current_direction*(1.0)
+                        self.continue_direction[1] = self.drone_current_direction_sign[0]*(1.0)
 
-                    self.intermittent_distance_y = self.vehicle_local_position.y+self.continue_direction[1]
+                    self.intermittent_distance_y = self.vehicle_local_position.y+(self.continue_direction[1]*np.sign(self.vehicle_local_position.y))
                     self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
-                    self.get_logger().info(f'Going right : {self.continue_direction[1]} - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
+                    self.get_logger().info(f'Going right : {(self.continue_direction[1]*np.sign(self.vehicle_local_position.y))} - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
                 elif front_obstacle_found >= 2 and left_obstacle_found == right_obstacle_found and self.continue_direction[1] != 0.0 :
 
-                    self.intermittent_distance_y = self.vehicle_local_position.y+self.continue_direction[1]
+                    self.intermittent_distance_y = self.vehicle_local_position.y+(self.continue_direction[1]*np.sign(self.vehicle_local_position.y))
                     self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
-                    self.get_logger().info(f'Continue in {self.continue_direction[1]} direction - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
+                    self.get_logger().info(f'Continue in {(self.continue_direction[1]*np.sign(self.vehicle_local_position.y))} direction - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
                 elif left_obstacle_found < 2 and (( right_obstacle_found >= 2 ) or ( right_obstacle_found < 2 and left_obstacle_found <= right_obstacle_found ) ) and front_obstacle_found >= 2:
                     if left_minimum < ( self.safe_distance_from_qudacopter*2 ) or right_minimum < ( self.safe_distance_from_qudacopter*2 ) or back_minimum < ( self.safe_distance_from_qudacopter*2 ) :
-                        self.continue_direction[1] = current_direction*(-0.25)
+                        self.continue_direction[1] = self.drone_current_direction_sign[0]*(-0.25)
                     else :
-                        self.continue_direction[1] = current_direction*(-1.0)
+                        self.continue_direction[1] = self.drone_current_direction_sign[0]*(-1.0)
 
-                    self.intermittent_distance_y = self.vehicle_local_position.y+self.continue_direction[1]
+                    self.intermittent_distance_y = self.vehicle_local_position.y+(self.continue_direction[1]*np.sign(self.vehicle_local_position.y))
                     self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
-                    self.get_logger().info(f'Going left : {self.continue_direction[1]} - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
+                    self.get_logger().info(f'Going left : {(self.continue_direction[1]*np.sign(self.vehicle_local_position.y))} - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
                 elif right_obstacle_found < 2 and (( left_obstacle_found >= 2 ) or ( left_obstacle_found < 2 and right_obstacle_found <= left_obstacle_found ) ) and front_obstacle_found >= 2:
                     if left_minimum < ( self.safe_distance_from_qudacopter*2 ) or right_minimum < ( self.safe_distance_from_qudacopter*2 ) or back_minimum < ( self.safe_distance_from_qudacopter*2 ) :
-                        self.continue_direction[1] = current_direction*(0.25)
+                        self.continue_direction[1] = self.drone_current_direction_sign[0]*(0.25)
                     else :
-                        self.continue_direction[1] = current_direction*(1.0)
+                        self.continue_direction[1] = self.drone_current_direction_sign[0]*(1.0)
 
-                    self.intermittent_distance_y = self.vehicle_local_position.y+self.continue_direction[1]
+                    self.intermittent_distance_y = self.vehicle_local_position.y+(self.continue_direction[1]*np.sign(self.vehicle_local_position.y))
                     self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
-                    self.get_logger().info(f'Going right : {self.continue_direction[1]} - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
+                    self.get_logger().info(f'Going right : {(self.continue_direction[1]*np.sign(self.vehicle_local_position.y))} - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
                 elif front_obstacle_found < 1 and left_minimum >= self.safe_distance_from_qudacopter*2 and right_minimum < self.safe_distance_from_qudacopter :
-                    self.continue_direction[1] = current_direction*(-0.25)
+                    self.continue_direction[1] = self.drone_current_direction_sign[0]*(-0.25)
 
-                    self.intermittent_distance_y = self.vehicle_local_position.y+self.continue_direction[1]
+                    self.intermittent_distance_y = self.vehicle_local_position.y+(self.continue_direction[1]*np.sign(self.vehicle_local_position.y))
                     self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
 
-                    self.get_logger().info(f'Going left because of right obstacle : {self.continue_direction[1]} - {self.intermittent_distance_x} - {self.intermittent_distance_y}')
+                    self.get_logger().info(f'Going left because of right obstacle : {(self.continue_direction[1]*np.sign(self.vehicle_local_position.y))} - {self.intermittent_distance_x} - {self.intermittent_distance_y}')
                 elif front_obstacle_found < 1 and left_minimum < self.safe_distance_from_qudacopter and right_minimum >= self.safe_distance_from_qudacopter*2 :
-                    self.continue_direction[1] = current_direction*(0.25)
+                    self.continue_direction[1] = self.drone_current_direction_sign[0]*(0.25)
 
-                    self.intermittent_distance_y = self.vehicle_local_position.y+self.continue_direction[1]
+                    self.intermittent_distance_y = self.vehicle_local_position.y+(self.continue_direction[1]*np.sign(self.vehicle_local_position.y))
                     self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y , self.takeoff_height,self.yaw_angle)
 
-                    self.get_logger().info(f'Going right because of left obstacle : {self.continue_direction[1]} - {self.intermittent_distance_x} - {self.intermittent_distance_y}')
+                    self.get_logger().info(f'Going right because of left obstacle : {(self.continue_direction[1]*np.sign(self.vehicle_local_position.y))} - {self.intermittent_distance_x} - {self.intermittent_distance_y}')
                 elif front_obstacle_found < 1 and left_minimum >= self.safe_distance_from_qudacopter and right_minimum >= self.safe_distance_from_qudacopter and back_minimum >= self.safe_distance_from_qudacopter:
                     self.get_logger().info(f'Forward obstacle cleared and setting to 0 - {self.vehicle_local_position.x} - {self.vehicle_local_position.y} - {self.vehicle_local_position.z}')
                     self.obstacle_found = False
@@ -358,109 +341,103 @@ class OffboardControl(Node):
                     self.intermittent_distance_y = self.vehicle_local_position.y
                 else :
                     if self.continue_direction[1] != 0.0 :
-                        self.intermittent_distance_y = self.vehicle_local_position.y+self.continue_direction[1]
+                        self.intermittent_distance_y = self.vehicle_local_position.y+(self.continue_direction[1]*np.sign(self.vehicle_local_position.y))
                         self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
-                        self.get_logger().info(f'Continue in {self.continue_direction[1]} direction - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
+                        self.get_logger().info(f'Continue in {(self.continue_direction[1]*np.sign(self.vehicle_local_position.y))} direction - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
                     else :
                         self.get_logger().info(f'Continue direction not set')
 
             
             elif self.forward_obstract_distance[0] == "y" :
-                if self.drone_current_direction[1] :
-                    current_direction = +1
-                else :
-                    current_direction = -1
-                self.get_logger().info(f'y 4m obstacles : {current_direction} - {back_obstacle_found} - {left_obstacle_found} - {front_obstacle_found} - {right_obstacle_found} - {all_angles_distance}')
+
+                self.get_logger().info(f'y 4m obstacles : {self.drone_current_direction_sign} - {back_obstacle_found} - {left_obstacle_found} - {front_obstacle_found} - {right_obstacle_found} - {all_angles_distance}')
                 if front_obstacle_found > 0 and front_obstacle_found <= self.previous_front_obstacle_found and self.continue_direction[0] != 0.0 and left_minimum >= self.safe_distance_from_qudacopter and right_minimum >= self.safe_distance_from_qudacopter and back_minimum >= self.safe_distance_from_qudacopter:
                     if ( left_minimum < ( self.safe_distance_from_qudacopter*2 ) or right_minimum < ( self.safe_distance_from_qudacopter*2 ) or back_minimum < ( self.safe_distance_from_qudacopter*2 )) and abs(self.continue_direction[0]) == 1 :
                         self.continue_direction[0] = self.continue_direction[0]/4
                     elif left_minimum >= self.safe_distance_from_qudacopter*2 and right_minimum >= self.safe_distance_from_qudacopter*2 and back_minimum >= self.safe_distance_from_qudacopter*2 and abs(self.continue_direction[0]) == 0.25 :
                         self.continue_direction[0] = self.continue_direction[0]*4
-                    if self.drone_current_direction[1] :
-                        drone_direction = 0.25
-                    else:
-                        drone_direction = -0.25
+
                     if front_minimum > ( self.safe_distance_from_qudacopter*2 ) and ( (right_down_corner_distances_minimum < ( self.safe_distance_from_qudacopter*2 )) or (left_down_corner_distances_minimum < ( self.safe_distance_from_qudacopter*2 ))) :
-                        self.intermittent_distance_y = self.vehicle_local_position.y+drone_direction
+                        self.intermittent_distance_y = self.vehicle_local_position.y+(self.drone_current_direction_sign[1]*0.25*np.sign(self.vehicle_local_position.y))
                         self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
-                        self.get_logger().info(f'y Down corner - Moving up in {drone_direction} direction - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
+                        self.get_logger().info(f'y Down corner - Moving up in {(self.drone_current_direction_sign[1]*0.25*np.sign(self.vehicle_local_position.y))} direction - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
                     elif back_minimum > ( self.safe_distance_from_qudacopter*2 ) and right_minimum > ( self.safe_distance_from_qudacopter*2 ) and right_down_corner_distances_minimum > ( self.safe_distance_from_qudacopter*2 ) and (left_up_corner_distances_minimum < ( self.safe_distance_from_qudacopter*2 )) :
-                        self.intermittent_distance_x = self.vehicle_local_position.x+(drone_direction)
-                        self.intermittent_distance_y = self.vehicle_local_position.y+(drone_direction*-1)
+                        self.intermittent_distance_x = self.vehicle_local_position.x+(self.drone_current_direction_sign[1]*0.25*np.sign(self.vehicle_local_position.x))
+                        self.intermittent_distance_y = self.vehicle_local_position.y-(self.drone_current_direction_sign[1]*0.25*np.sign(self.vehicle_local_position.y))
                         self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
-                        self.get_logger().info(f'y Left Up corner - Moving right down in {(drone_direction)} {(drone_direction*-1)} direction - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
+                        self.get_logger().info(f'y Left Up corner - Moving right down in {(self.drone_current_direction_sign[1]*0.25*np.sign(self.vehicle_local_position.y))} {-(self.drone_current_direction_sign[1]*0.25*np.sign(self.vehicle_local_position.x))} direction - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
                     elif back_minimum > ( self.safe_distance_from_qudacopter*2 ) and ( (right_up_corner_distances_minimum < ( self.safe_distance_from_qudacopter*2 )) or (left_up_corner_distances_minimum < ( self.safe_distance_from_qudacopter*2 ))) :
-                        self.intermittent_distance_y = self.vehicle_local_position.y+(drone_direction*-1)
+                        self.intermittent_distance_y = self.vehicle_local_position.y-(self.drone_current_direction_sign[1]*0.25*np.sign(self.vehicle_local_position.y))
                         self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
-                        self.get_logger().info(f'y Up corner - Moving down in {(drone_direction*-1)} direction - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
+                        self.get_logger().info(f'y Up corner - Moving down in {-(self.drone_current_direction_sign[1]*0.25*np.sign(self.vehicle_local_position.y))} direction - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
                     else :
-                        self.intermittent_distance_x = self.vehicle_local_position.x+self.continue_direction[0]
+                        self.intermittent_distance_x = self.vehicle_local_position.x+(self.continue_direction[0]*np.sign(self.vehicle_local_position.x))
                         self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
-                        self.get_logger().info(f'y Continue in {self.continue_direction[0]} direction - {self.intermittent_distance_x} - {self.intermittent_distance_y}')
+                        self.get_logger().info(f'y Continue in {(self.continue_direction[0]*np.sign(self.vehicle_local_position.x))} direction - {self.intermittent_distance_x} - {self.intermittent_distance_y}')
                 elif front_obstacle_found >= 2 and front_left_obstacle_found <= front_right_obstacle_found :
                     if left_minimum < ( self.safe_distance_from_qudacopter*2 ) or right_minimum < ( self.safe_distance_from_qudacopter*2 ) or back_minimum < ( self.safe_distance_from_qudacopter*2 ) :
-                        self.continue_direction[0] = current_direction*(-0.25)
+                        self.continue_direction[0] = self.drone_current_direction_sign[1]*(0.25)
                     else :
-                        self.continue_direction[0] = current_direction*(-1.0)
-                    self.intermittent_distance_x = self.vehicle_local_position.x+self.continue_direction[0]
+                        self.continue_direction[0] = self.drone_current_direction_sign[1]*(1.0)
+                    self.intermittent_distance_x = self.vehicle_local_position.x+(self.continue_direction[0]*np.sign(self.vehicle_local_position.x))
                     self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
-                    self.get_logger().info(f'Using front Going left : {self.continue_direction[0]} - {self.intermittent_distance_x} - {self.intermittent_distance_y}')
+                    self.get_logger().info(f'Using front Going left : {(self.continue_direction[0]*np.sign(self.vehicle_local_position.x))} - {self.intermittent_distance_x} - {self.intermittent_distance_y}')
                 elif front_obstacle_found >= 2 and front_left_obstacle_found <= front_right_obstacle_found :
                     if left_minimum < ( self.safe_distance_from_qudacopter*2 ) or right_minimum < ( self.safe_distance_from_qudacopter*2 ) or back_minimum < ( self.safe_distance_from_qudacopter*2 ) :
-                        self.continue_direction[0] = current_direction*(0.25)
+                        self.continue_direction[0] = self.drone_current_direction_sign[1]*(-0.25)
                     else :
-                        self.continue_direction[0] = current_direction*(1.0)
-                    self.intermittent_distance_x = self.vehicle_local_position.x+self.continue_direction[0]
+                        self.continue_direction[0] = self.drone_current_direction_sign[1]*(-1.0)
+                    self.intermittent_distance_x = self.vehicle_local_position.x+(self.continue_direction[0]*np.sign(self.vehicle_local_position.x))
                     self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
-                    self.get_logger().info(f'Using front Going right : {self.continue_direction[0]} - {self.intermittent_distance_x} - {self.intermittent_distance_y}')
+                    self.get_logger().info(f'Using front Going right : {(self.continue_direction[0]*np.sign(self.vehicle_local_position.x))} - {self.intermittent_distance_x} - {self.intermittent_distance_y}')
                 elif front_obstacle_found >= 2 and left_obstacle_found >= 2 and right_obstacle_found >= 2 and left_obstacle_found <= right_obstacle_found :
                     if left_minimum < ( self.safe_distance_from_qudacopter*2 ) or right_minimum < ( self.safe_distance_from_qudacopter*2 ) or back_minimum < ( self.safe_distance_from_qudacopter*2 ) :
-                        self.continue_direction[0] = current_direction*(-0.25)
+                        self.continue_direction[0] = self.drone_current_direction_sign[1]*(0.25)
                     else :
-                        self.continue_direction[0] = current_direction*(-1.0)
-                    self.intermittent_distance_x = self.vehicle_local_position.x+self.continue_direction[0]
+                        self.continue_direction[0] = self.drone_current_direction_sign[1]*(1.0)
+                    self.intermittent_distance_x = self.vehicle_local_position.x+(self.continue_direction[0]*np.sign(self.vehicle_local_position.x))
                     self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
-                    self.get_logger().info(f'Going left : {self.continue_direction[0]} - {self.intermittent_distance_x} - {self.intermittent_distance_y}')
+                    self.get_logger().info(f'Going left : {(self.continue_direction[0]*np.sign(self.vehicle_local_position.x))} - {self.intermittent_distance_x} - {self.intermittent_distance_y}')
                 elif front_obstacle_found >= 2 and left_obstacle_found >= 2 and right_obstacle_found >= 2 and left_obstacle_found >= right_obstacle_found :
                     if left_minimum < ( self.safe_distance_from_qudacopter*2 ) or right_minimum < ( self.safe_distance_from_qudacopter*2 ) or back_minimum < ( self.safe_distance_from_qudacopter*2 ) :
-                        self.continue_direction[0] = current_direction*(0.25)
+                        self.continue_direction[0] = self.drone_current_direction_sign[1]*(-0.25)
                     else :
-                        self.continue_direction[0] = current_direction*(1.0)
-                    self.intermittent_distance_x = self.vehicle_local_position.x+self.continue_direction[0]
+                        self.continue_direction[0] = self.drone_current_direction_sign[1]*(-1.0)
+                    self.intermittent_distance_x = self.vehicle_local_position.x+(self.continue_direction[0]*np.sign(self.vehicle_local_position.x))
                     self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
-                    self.get_logger().info(f'Going right : {self.continue_direction[0]} - {self.intermittent_distance_x} - {self.intermittent_distance_y}')
+                    self.get_logger().info(f'Going right : {(self.continue_direction[0]*np.sign(self.vehicle_local_position.x))} - {self.intermittent_distance_x} - {self.intermittent_distance_y}')
                 elif front_obstacle_found >= 2 and left_obstacle_found == right_obstacle_found and self.continue_direction[0] != 0.0 :
-                    self.intermittent_distance_x = self.vehicle_local_position.x+self.continue_direction[0]
+                    self.intermittent_distance_x = self.vehicle_local_position.x+(self.continue_direction[0]*np.sign(self.vehicle_local_position.x))
                     self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
-                    self.get_logger().info(f'Continue in {self.continue_direction[0]} direction - {self.intermittent_distance_x} - {self.intermittent_distance_y}')
+                    self.get_logger().info(f'Continue in {(self.continue_direction[0]*np.sign(self.vehicle_local_position.x))} direction - {self.intermittent_distance_x} - {self.intermittent_distance_y}')
                 elif left_obstacle_found < 2 and (( right_obstacle_found >= 2 ) or ( right_obstacle_found < 2 and left_obstacle_found <= right_obstacle_found ) ) and front_obstacle_found >= 2:
                     if left_minimum < ( self.safe_distance_from_qudacopter*2 ) or right_minimum < ( self.safe_distance_from_qudacopter*2 ) or back_minimum < ( self.safe_distance_from_qudacopter*2 ) :
-                        self.continue_direction[0] = current_direction*(-0.25)
+                        self.continue_direction[0] = self.drone_current_direction_sign[1]*(0.25)
                     else :
-                        self.continue_direction[0] = current_direction*(-1.0)
-                    self.intermittent_distance_x = self.vehicle_local_position.x+self.continue_direction[0]
+                        self.continue_direction[0] = self.drone_current_direction_sign[1]*(1.0)
+                    self.intermittent_distance_x = self.vehicle_local_position.x+(self.continue_direction[0]*np.sign(self.vehicle_local_position.x))
                     self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
-                    self.get_logger().info(f'Going left : {self.continue_direction[0]} - {self.intermittent_distance_x} - {self.intermittent_distance_y}')
+                    self.get_logger().info(f'Going left : {(self.continue_direction[0]*np.sign(self.vehicle_local_position.x))} - {self.intermittent_distance_x} - {self.intermittent_distance_y}')
                 elif right_obstacle_found < 2 and (( left_obstacle_found >= 2 ) or ( left_obstacle_found < 2 and right_obstacle_found <= left_obstacle_found ) ) and front_obstacle_found >= 2:
                     if left_minimum < ( self.safe_distance_from_qudacopter*2 ) or right_minimum < ( self.safe_distance_from_qudacopter*2 ) or back_minimum < ( self.safe_distance_from_qudacopter*2 ) :
-                        self.continue_direction[0] = current_direction*(0.25)
+                        self.continue_direction[0] = self.drone_current_direction_sign[1]*(-0.25)
                     else :
-                        self.continue_direction[0] = current_direction*(1)
-                    self.intermittent_distance_x = self.vehicle_local_position.x+self.continue_direction[0]
+                        self.continue_direction[0] = self.drone_current_direction_sign[1]*(-1)
+                    self.intermittent_distance_x = self.vehicle_local_position.x+(self.continue_direction[0]*np.sign(self.vehicle_local_position.x))
                     self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
-                    self.get_logger().info(f'Going right : {self.continue_direction[0]} - {self.intermittent_distance_x} - {self.intermittent_distance_y}')
+                    self.get_logger().info(f'Going right : {(self.continue_direction[0]*np.sign(self.vehicle_local_position.x))} - {self.intermittent_distance_x} - {self.intermittent_distance_y}')
                 elif front_obstacle_found < 1 and left_minimum >= self.safe_distance_from_qudacopter*2 and right_minimum < self.safe_distance_from_qudacopter :
-                    self.continue_direction[0] = current_direction*(-0.25)
-                    self.intermittent_distance_x = self.vehicle_local_position.x+self.continue_direction[0]
+                    self.continue_direction[0] = self.drone_current_direction_sign[1]*(0.25)
+                    self.intermittent_distance_x = self.vehicle_local_position.x+(self.continue_direction[0]*np.sign(self.vehicle_local_position.x))
                     self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
 
-                    self.get_logger().info(f'Going left because of right obstacle : {self.continue_direction[0]} - {self.intermittent_distance_x} - {self.intermittent_distance_y}')
+                    self.get_logger().info(f'Going left because of right obstacle : {(self.continue_direction[0]*np.sign(self.vehicle_local_position.x))} - {self.intermittent_distance_x} - {self.intermittent_distance_y}')
                 elif front_obstacle_found < 1 and left_minimum < self.safe_distance_from_qudacopter and right_minimum >= self.safe_distance_from_qudacopter*2 :
-                    self.continue_direction[0] = current_direction*(0.25)
-                    self.intermittent_distance_x = self.vehicle_local_position.x+self.continue_direction[0]
+                    self.continue_direction[0] = self.drone_current_direction_sign[1]*(-0.25)
+                    self.intermittent_distance_x = self.vehicle_local_position.x+(self.continue_direction[0]*np.sign(self.vehicle_local_position.x))
                     self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
 
-                    self.get_logger().info(f'Going right because of left obstacle : {self.continue_direction[0]} - {self.intermittent_distance_x} - {self.intermittent_distance_y}')
+                    self.get_logger().info(f'Going right because of left obstacle : {(self.continue_direction[0]*np.sign(self.vehicle_local_position.x))} - {self.intermittent_distance_x} - {self.intermittent_distance_y}')
                 elif front_obstacle_found < 1 and left_minimum >= self.safe_distance_from_qudacopter and right_minimum >= self.safe_distance_from_qudacopter and back_minimum >= self.safe_distance_from_qudacopter:
                     self.get_logger().info(f'Forward obstacle cleared and setting to 0 ')
                     self.obstacle_found = False
@@ -470,9 +447,9 @@ class OffboardControl(Node):
                     self.intermittent_distance_y = self.vehicle_local_position.y
                 else :
                     if self.continue_direction[0] != 0.0 :
-                        self.intermittent_distance_x = self.vehicle_local_position.x+self.continue_direction[0]
+                        self.intermittent_distance_x = self.vehicle_local_position.x+(self.continue_direction[0]*np.sign(self.vehicle_local_position.x))
                         self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
-                        self.get_logger().info(f'Continue in {self.continue_direction[0]} direction - {self.intermittent_distance_x} - {self.intermittent_distance_y}')
+                        self.get_logger().info(f'Continue in {(self.continue_direction[0]*np.sign(self.vehicle_local_position.x))} direction - {self.intermittent_distance_x} - {self.intermittent_distance_y}')
                     else :
                         self.get_logger().info(f'Continue direction not set')
         self.previous_front_obstacle_found = front_obstacle_found
