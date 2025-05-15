@@ -49,10 +49,10 @@ class OffboardControl(Node):
         self.vehicle_local_position = VehicleLocalPosition()
         self.vehicle_status = VehicleStatus()
         self.takeoff_height = -5.0
-        self.forward_distance_x = 15.0
+        self.forward_distance_x = 18.0
         self.forward_obstract_distance = [ "x" , 0.0, 0.0 ]
         self.continue_direction = [0.0,0.0]
-        self.forward_distance_y = 15.0
+        self.forward_distance_y = -20.0
         self.intermittent_distance_x = 0.0
         self.intermittent_distance_y = 0.0
         self.vehicle_step_distance = 0.0
@@ -280,7 +280,7 @@ class OffboardControl(Node):
                         self.intermittent_distance_y = self.vehicle_local_position.y+(self.continue_direction[1])
                         self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
                         self.get_logger().info(f'Continue in {(self.continue_direction[1])} direction - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
-                elif front_obstacle_found >= 2 and front_left_obstacle_found <= front_right_obstacle_found :
+                elif front_obstacle_found >= 2 and front_left_obstacle_found < front_right_obstacle_found :
                     # if left_minimum < ( self.safe_distance_from_qudacopter*2 ) or right_minimum < ( self.safe_distance_from_qudacopter*2 ) or back_minimum < ( self.safe_distance_from_qudacopter*2 ) :
                     #     self.continue_direction[1] = self.drone_current_direction_sign[0]*(-0.25)
                     # else :
@@ -365,6 +365,8 @@ class OffboardControl(Node):
                     self.obstacle_found = False
                     self.forward_obstract_distance[1] = 0.0
                     self.forward_obstract_distance[2] = 0.0
+                    self.continue_direction[0] = 0.0
+                    self.continue_direction[1] = 0.0
                     self.intermittent_distance_x = self.vehicle_local_position.x
                     self.intermittent_distance_y = self.vehicle_local_position.y
                 else :
@@ -410,7 +412,7 @@ class OffboardControl(Node):
                         self.intermittent_distance_x = self.vehicle_local_position.x+(self.continue_direction[0])
                         self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
                         self.get_logger().info(f'y Continue in {(self.continue_direction[0])} direction - {self.intermittent_distance_x} - {self.intermittent_distance_y}')
-                elif front_obstacle_found >= 2 and front_left_obstacle_found <= front_right_obstacle_found :
+                elif front_obstacle_found >= 2 and front_left_obstacle_found < front_right_obstacle_found :
                     # if left_minimum < ( self.safe_distance_from_qudacopter*2 ) or right_minimum < ( self.safe_distance_from_qudacopter*2 ) or back_minimum < ( self.safe_distance_from_qudacopter*2 ) :
                     #     self.continue_direction[0] = self.drone_current_direction_sign[1]*(0.25)
                     # else :
@@ -488,6 +490,8 @@ class OffboardControl(Node):
                     self.obstacle_found = False
                     self.forward_obstract_distance[1] = 0.0
                     self.forward_obstract_distance[2] = 0.0
+                    self.continue_direction[0] = 0.0
+                    self.continue_direction[1] = 0.0
                     self.intermittent_distance_x = self.vehicle_local_position.x
                     self.intermittent_distance_y = self.vehicle_local_position.y
                 else :
