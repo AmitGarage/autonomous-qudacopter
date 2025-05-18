@@ -49,10 +49,10 @@ class OffboardControl(Node):
         self.vehicle_local_position = VehicleLocalPosition()
         self.vehicle_status = VehicleStatus()
         self.takeoff_height = -5.0
-        self.forward_distance_x = -6.0
+        self.forward_distance_x = -5.0
         self.forward_obstract_distance = [ "x" , 0.0, 0.0 ]
         self.continue_direction = [0.0,0.0]
-        self.forward_distance_y = -21.0
+        self.forward_distance_y = -17.0
         self.intermittent_distance_x = 0.0
         self.intermittent_distance_y = 0.0
         self.vehicle_step_distance = 0.0
