@@ -10,7 +10,7 @@ def generate_launch_description():
     config_file_path = os.path.join(package_dir,'config','params.yaml')
     print("config_file_path - ",config_file_path)
     parameters = load_yaml(config_file_path)
-    print("parameters - ",parameters)
+    print("parameters - ",parameters["ros__parameters"]["traverse_coordinates"])
 
     micro_ros_agent = ExecuteProcess(
         cmd=[[
@@ -25,6 +25,12 @@ def generate_launch_description():
         executable='offboard_control_traverse',
         name='control',
         output='screen',
+        parameters=[
+                {
+                    # "traverse_coordinates" : parameters["ros__parameters"]["traverse_coordinates"]
+                    'traverse_coordinates': ["10", "20"]
+                }
+            ],
         shell=True,
     )
 
