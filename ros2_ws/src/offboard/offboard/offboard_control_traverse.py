@@ -3,7 +3,8 @@
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
-from px4_msgs.msg import OffboardControlMode, TrajectorySetpoint, VehicleCommand, VehicleLocalPosition, VehicleStatus, ObstacleDistance
+from px4_msgs.msg import OffboardControlMode, TrajectorySetpoint, VehicleCommand, VehicleLocalPosition, VehicleStatus #, ObstacleDistance
+from sensor_msgs.msg import LaserScan
 import time
 import math
 import numpy as np
@@ -42,7 +43,7 @@ class OffboardControl(Node):
             VehicleStatus, '/fmu/out/vehicle_status', self.vehicle_status_callback, qos_profile)
         # Creating lidar sensor subscriber
         self.lidar_2d_subscription = self.create_subscription(
-            ObstacleDistance, '/fmu/out/obstacle_distance', self.obstacle_distance_callback, qos_profile)
+            LaserScan, '/scan', self.obstacle_distance_callback, 10)
 
         # Initialize variables
         self.offboard_setpoint_counter = 0
@@ -58,7 +59,7 @@ class OffboardControl(Node):
         self.vehicle_step_distance = 0.0
         self.safe_distance_from_qudacopter = 60
         self.square_check = 0
-        self.obstacle_distance = ObstacleDistance()
+        self.obstacle_distance = LaserScan()
         self.obstacle_found = False
         self.obstract_distance_x = 0.0
         self.obstract_distance_y = 0.0
@@ -178,6 +179,7 @@ class OffboardControl(Node):
         """
         This function is called when new data is received on the topic.
         """
+        self.get_logger().info(f'{msg}')
         self.get_logger().info(f'Obstacle distance: {self.drone_current_direction_sign} - {msg.distances} - {self.vehicle_local_position.heading} - {self.vehicle_local_position.x} - {self.vehicle_local_position.y} - {self.vehicle_local_position.z} - {self.forward_obstract_distance}')  # Print the distance
         # Add your code here to process the obstacle distance data
         all_angles_distance = msg.distances
