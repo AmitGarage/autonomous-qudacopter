@@ -57,7 +57,7 @@ class OffboardControl(Node):
         self.intermittent_distance_x = 0.0
         self.intermittent_distance_y = 0.0
         self.vehicle_step_distance = 0.0
-        self.safe_distance_from_qudacopter = 60
+        self.safe_distance_from_qudacopter = 0.6
         self.square_check = 0
         self.obstacle_distance = LaserScan()
         self.obstacle_found = False
@@ -115,22 +115,27 @@ class OffboardControl(Node):
     def lidar_processing( self , lidar_msg) :
 
         if self.z_achieved and ( ( not self.x_achieved and self.x_rotate_achieved ) or ( not self.y_achieved and self.y_rotate_achieved ) ):
-            obstacle_distances = [(distance_idx,lidar_msg.distances[distance_idx]) for distance_idx in range(len(lidar_msg.distances)) if lidar_msg.distances[distance_idx] < 599]
+            obstacle_distances = [(distance_idx,lidar_msg.ranges[distance_idx]) for distance_idx in range(len(lidar_msg.ranges)) if lidar_msg.ranges[distance_idx] < np.inf]
 
-            # self.get_logger().info(f'obstacle_distances - {obstacle_distances}')
+            self.get_logger().info(f'obstacle_distances - {obstacle_distances}')
             for obstacle_distance in obstacle_distances :
-                if math.radians(45) + math.radians(90) - self.vehicle_local_position.heading - math.radians(obstacle_distance[0]*lidar_msg.increment) < 0 :
-                    radians = math.radians(360) + math.radians(45) + math.radians(90) - self.vehicle_local_position.heading - math.radians(obstacle_distance[0]*lidar_msg.increment)
+                if -math.radians(45) + self.vehicle_local_position.heading + math.radians(obstacle_distance[0]*(0.72)) < 0 :
+                    radians = math.radians(360) - math.radians(45) + self.vehicle_local_position.heading + math.radians(obstacle_distance[0]*(0.72))
                 else :
-                    radians = math.radians(45) + math.radians(90) - self.vehicle_local_position.heading - math.radians(obstacle_distance[0]*lidar_msg.increment)
-                # if 45 + 90 - self.yaw_angle_degree + (-1*obstacle_distance[0]*lidar_msg.increment) < 0 :
-                #     radians = math.radians(360 + 45 + 90 - self.yaw_angle_degree + (-1*(obstacle_distance[0]*lidar_msg.increment)))
+                    radians = -math.radians(45) + self.vehicle_local_position.heading + math.radians(obstacle_distance[0]*(0.72))
+                # if -math.radians(45) + self.vehicle_local_position.heading + math.radians(obstacle_distance[0]*(0.72)) < 0 :
+                #     radians = math.radians(360) - math.radians(45) + self.vehicle_local_position.heading + math.radians(obstacle_distance[0]*(0.72))
                 # else :
-                #     radians = math.radians(45 + 90 - self.yaw_angle_degree + (-1*(obstacle_distance[0]*lidar_msg.increment)))
+                #     radians = -math.radians(45) + self.vehicle_local_position.heading + math.radians(obstacle_distance[0]*(0.72))
+                # radians = -math.radians(45) + self.vehicle_local_position.heading + math.radians(obstacle_distance[0]*(0.72))
+                # if 45 + 90 - self.yaw_angle_degree + (-1*obstacle_distance[0]*(0.72)) < 0 :
+                #     radians = math.radians(360 + 45 + 90 - self.yaw_angle_degree + (-1*(obstacle_distance[0]*(0.72))))
+                # else :
+                #     radians = math.radians(45 + 90 - self.yaw_angle_degree + (-1*(obstacle_distance[0]*(0.72))))
                 cos_value = np.cos(radians)
                 sin_value = np.sin(radians)
-                relative_obstacle_x = (obstacle_distance[1]/100)*cos_value
-                relative_obstacle_y = (obstacle_distance[1]/100)*sin_value
+                relative_obstacle_x = (obstacle_distance[1])*cos_value      
+                relative_obstacle_y = (obstacle_distance[1])*sin_value
                 absolute_obstacle_x = relative_obstacle_x + (-1*self.vehicle_local_position.x)
                 absolute_obstacle_y = relative_obstacle_y + self.vehicle_local_position.y
                 # absolute_obstacle_z = -1*self.vehicle_local_position.z
@@ -139,10 +144,10 @@ class OffboardControl(Node):
                 self.y_data.append(absolute_obstacle_y)
                 # self.z_data.append(absolute_obstacle_z)
 
-            # self.get_logger().info(f'lidar distance - {lidar_msg.distances}')
-            # self.get_logger().info(f'lidar angle - {[idx*lidar_msg.increment for idx in range(len(lidar_msg.distances))]}')
-            # self.get_logger().info(f'lidar angle - {[360 + 45 + 90 - self.yaw_angle_degree + (-1*(idx*lidar_msg.increment)) if 45 + 90 - self.yaw_angle_degree + (-1*idx*lidar_msg.increment) < 0 else 45 + 90 - self.yaw_angle_degree + (-1*idx*lidar_msg.increment) for idx in range(len(lidar_msg.distances))]}')
-            # self.get_logger().info(f'lidar angle - {[math.degrees(6.28319 + 0.785398 + 1.5708 - self.vehicle_local_position.heading - - math.radians(idx*lidar_msg.increment)) if 0.785398 + 1.5708 - self.vehicle_local_position.heading - math.radians(idx*lidar_msg.increment) < 0 else math.degrees(0.785398 + 1.5708 - self.vehicle_local_position.heading - math.radians(idx*lidar_msg.increment)) for idx in range(len(lidar_msg.distances))]}')
+            # self.get_logger().info(f'lidar distance - {lidar_msg.ranges}')
+            # self.get_logger().info(f'lidar angle - {[idx*lidar_msg.increment for idx in range(len(lidar_msg.ranges))]}')
+            # self.get_logger().info(f'lidar angle - {[360 + 45 + 90 - self.yaw_angle_degree + (-1*(idx*lidar_msg.increment)) if 45 + 90 - self.yaw_angle_degree + (-1*idx*lidar_msg.increment) < 0 else 45 + 90 - self.yaw_angle_degree + (-1*idx*lidar_msg.increment) for idx in range(len(lidar_msg.ranges))]}')
+            # self.get_logger().info(f'lidar angle - {[math.degrees(6.28319 + 0.785398 + 1.5708 - self.vehicle_local_position.heading - - math.radians(idx*lidar_msg.increment)) if 0.785398 + 1.5708 - self.vehicle_local_position.heading - math.radians(idx*lidar_msg.increment) < 0 else math.degrees(0.785398 + 1.5708 - self.vehicle_local_position.heading - math.radians(idx*lidar_msg.increment)) for idx in range(len(lidar_msg.ranges))]}')
             # self.get_logger().info(f'local position - {self.vehicle_local_position.x} - {self.vehicle_local_position.y}')
             # self.get_logger().info(f'x_data - {self.x_data[-len(obstacle_distances):]}')
             # self.get_logger().info(f'y_data - {self.y_data[-len(obstacle_distances):]}')
@@ -169,7 +174,7 @@ class OffboardControl(Node):
     #     plt.pause(0.001)
 
     def collision_detected(self , distances):
-        if any(distance <= 30 for distance in distances):
+        if any(distance <= 0.3 for distance in distances):
             self.get_logger().info(f'All Obstacle distance: {distances}') 
             self.get_logger().info(f'May be collided : Stopping !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
             self.land()
@@ -179,28 +184,28 @@ class OffboardControl(Node):
         """
         This function is called when new data is received on the topic.
         """
-        self.get_logger().info(f'{msg}')
-        self.get_logger().info(f'Obstacle distance: {self.drone_current_direction_sign} - {msg.distances} - {self.vehicle_local_position.heading} - {self.vehicle_local_position.x} - {self.vehicle_local_position.y} - {self.vehicle_local_position.z} - {self.forward_obstract_distance}')  # Print the distance
+        # self.get_logger().info(f'{msg}')
+        self.get_logger().info(f'Obstacle distance: {self.drone_current_direction_sign} - {msg.ranges} - {self.vehicle_local_position.heading} - {self.vehicle_local_position.x} - {self.vehicle_local_position.y} - {self.vehicle_local_position.z} - {self.forward_obstract_distance}')  # Print the distance
         # Add your code here to process the obstacle distance data
-        all_angles_distance = msg.distances
+        all_angles_distance = msg.ranges
         self.lidar_processing( msg )
-        self.collision_detected( msg.distances.tolist() )
+        self.collision_detected( msg.ranges.tolist() )
         # self.x_data.append(self.vehicle_local_position.x)
         # self.y_data.append(self.vehicle_local_position.y)
         # self.update_plot()
         # self.get_logger().info(f'All Obstacle distance: {msg}') 
-        back_obstacle_found,left_obstacle_found,front_obstacle_found,right_obstacle_found,left_minimum,right_minimum,back_minimum,front_minimum,right_up_corner_distances_minimum,right_down_corner_distances_minimum,left_down_corner_distances_minimum,left_up_corner_distances_minimum,front_left_obstacle_found,front_right_obstacle_found,front_left_distances_minimum,front_right_distances_minimum = self.obstacle_and_direction( msg , 300)
-        back_obstacle_found_5,left_obstacle_found_5,front_obstacle_found_5,right_obstacle_found_5,_,_,_,_,_,_,_,_,_,_,_,_ = self.obstacle_and_direction( msg , 400)
+        back_obstacle_found,left_obstacle_found,front_obstacle_found,right_obstacle_found,left_minimum,right_minimum,back_minimum,front_minimum,right_up_corner_distances_minimum,right_down_corner_distances_minimum,left_down_corner_distances_minimum,left_up_corner_distances_minimum,front_left_obstacle_found,front_right_obstacle_found,front_left_distances_minimum,front_right_distances_minimum = self.obstacle_and_direction( msg , 3)
+        back_obstacle_found_5,left_obstacle_found_5,front_obstacle_found_5,right_obstacle_found_5,_,_,_,_,_,_,_,_,_,_,_,_ = self.obstacle_and_direction( msg , 4)
         
         if ( not self.obstacle_found ) and  (( not self.x_achieved and self.forward_obstract_distance[1] == 0.0 ) or ( not self.y_achieved and self.forward_obstract_distance[2] == 0.0 )) and (( front_obstacle_found_5 >= 2 ) or (back_obstacle_found >= 2)):
             if ( front_minimum - ( self.safe_distance_from_qudacopter + (self.safe_distance_from_qudacopter/2) ) ) < ( self.safe_distance_from_qudacopter ) :
-                mid_distance =  abs((front_minimum - self.safe_distance_from_qudacopter ) / 100) + 0.25
+                mid_distance =  abs((front_minimum - self.safe_distance_from_qudacopter )) + 0.25
             elif ( back_minimum - ( self.safe_distance_from_qudacopter + (self.safe_distance_from_qudacopter/2) ) ) < ( self.safe_distance_from_qudacopter ) :
-                mid_distance =  abs((back_minimum - self.safe_distance_from_qudacopter ) / 100) + 0.25
+                mid_distance =  abs((back_minimum - self.safe_distance_from_qudacopter )) + 0.25
             # elif (front_minimum < ( self.safe_distance_from_qudacopter*2 )) or (right_minimum < ( self.safe_distance_from_qudacopter*2 )) or (back_minimum < ( self.safe_distance_from_qudacopter*2 )) or (left_minimum < ( self.safe_distance_from_qudacopter*2 )) :
             #     mid_distance = 0.25
             elif ( front_minimum - ( self.safe_distance_from_qudacopter + (self.safe_distance_from_qudacopter/2) ) ) > 0.0 :
-                mid_distance = -1*((front_minimum - ( self.safe_distance_from_qudacopter + (self.safe_distance_from_qudacopter/2) )) / 100)
+                mid_distance = -1*((front_minimum - ( self.safe_distance_from_qudacopter + (self.safe_distance_from_qudacopter/2) )))
             else:
                 mid_distance = -1
 
@@ -214,7 +219,7 @@ class OffboardControl(Node):
                 if mid_distance < 0 and ( self.forward_obstract_distance[1] - self.forward_distance_x )*self.drone_current_direction_sign[0] > 0:
                     self.forward_obstract_distance[1] = self.forward_distance_x
                 if mid_distance > 0 and ( self.forward_obstract_distance[1] - self.forward_distance_x )*self.drone_current_direction_sign[0] < 0 :
-                    if ( front_minimum - (abs( self.vehicle_local_position.x - self.forward_distance_x )*100) ) > ( self.safe_distance_from_qudacopter ) :
+                    if ( front_minimum - (abs( self.vehicle_local_position.x - self.forward_distance_x )) ) > ( self.safe_distance_from_qudacopter ) :
                         self.forward_obstract_distance[1] = self.vehicle_local_position.x+(self.drone_current_direction_sign[0]*abs( self.vehicle_local_position.x - self.forward_distance_x))
                 
                 if (right_minimum < ( self.safe_distance_from_qudacopter*2 )) and (left_minimum > ( self.safe_distance_from_qudacopter*2 )) :
@@ -237,7 +242,7 @@ class OffboardControl(Node):
                 if mid_distance < 0 and ( self.forward_obstract_distance[2] - self.forward_distance_y )*self.drone_current_direction_sign[1] > 0:
                     self.forward_obstract_distance[2] = self.forward_distance_y
                 if mid_distance > 0 and ( self.forward_obstract_distance[2] - self.forward_distance_y )*self.drone_current_direction_sign[1] < 0 :
-                    if ( front_minimum - (abs( self.vehicle_local_position.y - self.forward_distance_y )*100) ) > ( self.safe_distance_from_qudacopter ) :
+                    if ( front_minimum - (abs( self.vehicle_local_position.y - self.forward_distance_y )) ) > ( self.safe_distance_from_qudacopter ) :
                         self.forward_obstract_distance[2] = self.vehicle_local_position.y+(self.drone_current_direction_sign[1]*abs( self.vehicle_local_position.y - self.forward_distance_y))
 
                 if (right_minimum < ( self.safe_distance_from_qudacopter*2 )) and (left_minimum > ( self.safe_distance_from_qudacopter*2 )) :
@@ -292,9 +297,9 @@ class OffboardControl(Node):
                         self.get_logger().info(f'Up corner - Moving down in {-(0.25*self.drone_current_direction_sign[0]*np.sign(self.vehicle_local_position.x))} direction - {self.drone_current_direction} - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
                     else :
                         if np.sign(self.drone_current_direction_sign[0]) == np.sign(self.continue_direction[1]) :
-                            y_diff = ((abs(right_minimum - self.safe_distance_from_qudacopter - 0.1))/100)
+                            y_diff = ((abs(right_minimum - self.safe_distance_from_qudacopter - 0.1)))
                         elif np.sign(self.drone_current_direction_sign[0]) != np.sign(self.continue_direction[1]) :
-                            y_diff = ((abs(left_minimum - self.safe_distance_from_qudacopter - 0.1))/100)
+                            y_diff = ((abs(left_minimum - self.safe_distance_from_qudacopter - 0.1)))
                         if ( y_diff > 1 ) :
                             y_diff = np.sign(y_diff)
                         self.continue_direction[1] = y_diff*np.sign(self.continue_direction[1])
@@ -306,7 +311,7 @@ class OffboardControl(Node):
                     #     self.continue_direction[1] = self.drone_current_direction_sign[0]*(-0.25)
                     # else :
                     #     self.continue_direction[1] = self.drone_current_direction_sign[0]*(-1.0)
-                    y_diff = ((abs(left_minimum - self.safe_distance_from_qudacopter - 0.1))/100)
+                    y_diff = ((abs(left_minimum - self.safe_distance_from_qudacopter - 0.1)))
                     if ( y_diff > 1 ) :
                         y_diff = np.sign(y_diff)
                     self.continue_direction[1] = self.drone_current_direction_sign[0]*y_diff*(-1)
@@ -319,7 +324,7 @@ class OffboardControl(Node):
                     # else :
                     #     self.continue_direction[1] = self.drone_current_direction_sign[0]*(1.0)
                     
-                    y_diff = ((abs(right_minimum - self.safe_distance_from_qudacopter - 0.1))/100)
+                    y_diff = ((abs(right_minimum - self.safe_distance_from_qudacopter - 0.1)))
                     if ( y_diff > 1 ) :
                         y_diff = np.sign(y_diff)
                     self.continue_direction[1] = self.drone_current_direction_sign[0]*y_diff
@@ -440,9 +445,9 @@ class OffboardControl(Node):
                         self.get_logger().info(f'y Up corner - Moving down in {-(self.drone_current_direction_sign[1]*0.25)} direction - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
                     else :
                         if np.sign(self.drone_current_direction_sign[1]) == np.sign(self.continue_direction[0]) :
-                            x_diff = ((abs(left_minimum - self.safe_distance_from_qudacopter - 0.1))/100)
+                            x_diff = ((abs(left_minimum - self.safe_distance_from_qudacopter - 0.1)))
                         elif np.sign(self.drone_current_direction_sign[1]) != np.sign(self.continue_direction[0]) :
-                            x_diff = ((abs(right_minimum - self.safe_distance_from_qudacopter - 0.1))/100)
+                            x_diff = ((abs(right_minimum - self.safe_distance_from_qudacopter - 0.1)))
                         if ( x_diff > 1 ) :
                             x_diff = np.sign(x_diff)
                         self.continue_direction[0] = x_diff*np.sign(self.continue_direction[0])
@@ -454,7 +459,7 @@ class OffboardControl(Node):
                     #     self.continue_direction[0] = self.drone_current_direction_sign[1]*(0.25)
                     # else :
                     #     self.continue_direction[0] = self.drone_current_direction_sign[1]*(1.0)
-                    x_diff = ((abs(left_minimum - self.safe_distance_from_qudacopter - 0.1))/100)
+                    x_diff = ((abs(left_minimum - self.safe_distance_from_qudacopter - 0.1)))
                     if ( x_diff > 1 ) :
                         x_diff = np.sign(x_diff)
                     self.continue_direction[0] = self.drone_current_direction_sign[1]*x_diff
@@ -466,11 +471,11 @@ class OffboardControl(Node):
                     #     self.continue_direction[0] = self.drone_current_direction_sign[1]*(-0.25)
                     # else :
                     #     self.continue_direction[0] = self.drone_current_direction_sign[1]*(-1.0)
-                    x_diff = ((abs(right_minimum - self.safe_distance_from_qudacopter - 0.1))/100)
+                    x_diff = ((abs(right_minimum - self.safe_distance_from_qudacopter - 0.1)))
                     if ( x_diff > 1 ) :
                         x_diff = np.sign(x_diff)
                     self.continue_direction[0] = self.drone_current_direction_sign[1]*x_diff*(-1)
-                    # self.continue_direction[0] = self.drone_current_direction_sign[1]*((abs(front_minimum - self.safe_distance_from_qudacopter - 0.1))/100)
+                    # self.continue_direction[0] = self.drone_current_direction_sign[1]*((abs(front_minimum - self.safe_distance_from_qudacopter - 0.1)))
                     self.intermittent_distance_x = self.vehicle_local_position.x+(self.continue_direction[0])
                     self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
                     self.get_logger().info(f'Using front Going right : {(self.continue_direction[0])} - {self.intermittent_distance_x} - {self.intermittent_distance_y}')
@@ -541,19 +546,19 @@ class OffboardControl(Node):
         self.previous_front_obstacle_found = front_obstacle_found
 
     def obstacle_and_direction( self, msg, threshold ):
-        msg = msg.distances.tolist()
-        obstacle_distances_right = msg[5:13] #msg[:18] #msg[:8]+msg[-8:]
-        obstacle_distances_back = msg[23:31] #msg[8:34] 
-        obstacle_distances_left = msg[41:49] #msg[34:50]
-        obstacle_distances_front = msg[59:67]
+        msg = msg.ranges.tolist()
+        obstacle_distances_front = msg[25:100] #msg[5:13] #msg[:18] #msg[:8]+msg[-8:]
+        obstacle_distances_left = msg[150:225] #msg[8:34] 
+        obstacle_distances_back = msg[275:350] #msg[34:50]
+        obstacle_distances_right = msg[400:475]
 
-        right_up_corner_distances = msg[-2:]+msg[:2]
-        right_down_corner_distances = msg[16:20]
-        left_down_corner_distances = msg[34:38]
-        left_up_corner_distances = msg[52:56]
+        right_up_corner_distances = msg[-20:]+msg[:20]
+        left_up_corner_distances = msg[105:145]
+        left_down_corner_distances = msg[230:270]
+        right_down_corner_distances = msg[355:395]
 
-        front_left_distance = msg[54:63]
-        front_right_distance = msg[63:72]
+        front_left_distance = msg[25:50]
+        front_right_distance = msg[50:100]
 
         # obstacle_distances_centre = msg[61:65]
         back_obstacle_found = len([*filter(lambda x: x < threshold, obstacle_distances_back)])
@@ -673,7 +678,7 @@ class OffboardControl(Node):
         self.publish_offboard_control_heartbeat_signal("position")
         # self.get_logger().info(f"self.obstacle_distance - {self.obstacle_distance}")
 
-        if self.offboard_setpoint_counter == 10:
+        if self.offboard_setpoint_counter == 11:
             self.engage_offboard_mode()
             self.arm()
         
