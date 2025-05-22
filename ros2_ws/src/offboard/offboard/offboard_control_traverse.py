@@ -69,6 +69,8 @@ class OffboardControl(Node):
         self.x_achieved = False
         self.y_achieved = True
         self.yaw_angle = 1.57079
+        self.actual_angle = self.yaw_angle
+        self.actual_angle_difference = 0.0
         self.previous_front_obstacle_found = 0.0
         self.x_rotate_achieved = False
         self.y_rotate_achieved = False
@@ -91,7 +93,7 @@ class OffboardControl(Node):
         previous_x = self.vehicle_local_position.x
         previous_y = self.vehicle_local_position.y
         self.vehicle_local_position = vehicle_local_position
-        self.drone_x_data.append(-1*self.vehicle_local_position.x)
+        self.drone_x_data.append(self.vehicle_local_position.x)
         self.drone_y_data.append(self.vehicle_local_position.y)
         if self.forward_distance_x - self.vehicle_local_position.x >= 0:
             self.drone_current_direction[0] = True
@@ -115,19 +117,21 @@ class OffboardControl(Node):
     def lidar_processing( self , lidar_msg) :
 
         if self.z_achieved and ( ( not self.x_achieved and self.x_rotate_achieved ) or ( not self.y_achieved and self.y_rotate_achieved ) ):
-            obstacle_distances = [(distance_idx,lidar_msg.ranges[distance_idx]) for distance_idx in range(len(lidar_msg.ranges)) if lidar_msg.ranges[distance_idx] < np.inf]
+            obstacle_distances = [(distance_idx,lidar_msg.ranges[distance_idx]) for distance_idx in range(len(lidar_msg.ranges)) if lidar_msg.ranges[distance_idx] < 5.5]
 
-            self.get_logger().info(f'obstacle_distances - {obstacle_distances}')
+            # self.get_logger().info(f'obstacle_distances - {obstacle_distances}')
             for obstacle_distance in obstacle_distances :
-                if -math.radians(45) + self.vehicle_local_position.heading + math.radians(obstacle_distance[0]*(0.72)) < 0 :
-                    radians = math.radians(360) - math.radians(45) + self.vehicle_local_position.heading + math.radians(obstacle_distance[0]*(0.72))
-                else :
-                    radians = -math.radians(45) + self.vehicle_local_position.heading + math.radians(obstacle_distance[0]*(0.72))
+                # if -math.radians(45) + self.vehicle_local_position.heading + math.radians(obstacle_distance[0]*(0.72)) > 6.28316 :
+                #     radians = ( - math.radians(45) + self.vehicle_local_position.heading + math.radians(obstacle_distance[0]*(0.72))) - math.radians(360)
+                # # elif math.radians(45) + math.radians(90) + self.vehicle_local_position.heading > 3.14158 :
+                # #     radians = - math.radians(90) + math.radians(45) + self.vehicle_local_position.heading + math.radians(obstacle_distance[0]*(0.72))
+                # else :
+                #     radians = - math.radians(45) + self.vehicle_local_position.heading + math.radians(obstacle_distance[0]*(0.72))
                 # if -math.radians(45) + self.vehicle_local_position.heading + math.radians(obstacle_distance[0]*(0.72)) < 0 :
                 #     radians = math.radians(360) - math.radians(45) + self.vehicle_local_position.heading + math.radians(obstacle_distance[0]*(0.72))
                 # else :
                 #     radians = -math.radians(45) + self.vehicle_local_position.heading + math.radians(obstacle_distance[0]*(0.72))
-                # radians = -math.radians(45) + self.vehicle_local_position.heading + math.radians(obstacle_distance[0]*(0.72))
+                radians = (-1*math.radians(45)) + self.actual_angle_difference + self.vehicle_local_position.heading + math.radians(obstacle_distance[0]*(0.72))
                 # if 45 + 90 - self.yaw_angle_degree + (-1*obstacle_distance[0]*(0.72)) < 0 :
                 #     radians = math.radians(360 + 45 + 90 - self.yaw_angle_degree + (-1*(obstacle_distance[0]*(0.72))))
                 # else :
@@ -136,7 +140,7 @@ class OffboardControl(Node):
                 sin_value = np.sin(radians)
                 relative_obstacle_x = (obstacle_distance[1])*cos_value      
                 relative_obstacle_y = (obstacle_distance[1])*sin_value
-                absolute_obstacle_x = relative_obstacle_x + (-1*self.vehicle_local_position.x)
+                absolute_obstacle_x = relative_obstacle_x + (self.vehicle_local_position.x)
                 absolute_obstacle_y = relative_obstacle_y + self.vehicle_local_position.y
                 # absolute_obstacle_z = -1*self.vehicle_local_position.z
 
@@ -149,8 +153,8 @@ class OffboardControl(Node):
             # self.get_logger().info(f'lidar angle - {[360 + 45 + 90 - self.yaw_angle_degree + (-1*(idx*lidar_msg.increment)) if 45 + 90 - self.yaw_angle_degree + (-1*idx*lidar_msg.increment) < 0 else 45 + 90 - self.yaw_angle_degree + (-1*idx*lidar_msg.increment) for idx in range(len(lidar_msg.ranges))]}')
             # self.get_logger().info(f'lidar angle - {[math.degrees(6.28319 + 0.785398 + 1.5708 - self.vehicle_local_position.heading - - math.radians(idx*lidar_msg.increment)) if 0.785398 + 1.5708 - self.vehicle_local_position.heading - math.radians(idx*lidar_msg.increment) < 0 else math.degrees(0.785398 + 1.5708 - self.vehicle_local_position.heading - math.radians(idx*lidar_msg.increment)) for idx in range(len(lidar_msg.ranges))]}')
             # self.get_logger().info(f'local position - {self.vehicle_local_position.x} - {self.vehicle_local_position.y}')
-            # self.get_logger().info(f'x_data - {self.x_data[-len(obstacle_distances):]}')
-            # self.get_logger().info(f'y_data - {self.y_data[-len(obstacle_distances):]}')
+            # self.get_logger().info(f'x_data - {self.x_data}')
+            # self.get_logger().info(f'y_data - {self.y_data}')
             map_data = {
                 "x" : self.x_data,
                 "y" : self.y_data,
@@ -163,6 +167,8 @@ class OffboardControl(Node):
             shutil.copy("/home/amit-singh/Downloads/qudacopter/tmp_map_data.json", "/home/amit-singh/Downloads/qudacopter/map_data.json")
             with open("/home/amit-singh/Downloads/qudacopter/tmp_map_data.json", "w") as outfile:
                 json.dump(map_data, outfile,indent=4)
+            # self.land()
+            # exit(0)
             # self.axes.scatter(vechile_position_x,vechile_position_y,c="#fd72c0",marker=".",s=5)
 
     # def update_plot(self):
@@ -681,6 +687,7 @@ class OffboardControl(Node):
         if self.offboard_setpoint_counter == 11:
             self.engage_offboard_mode()
             self.arm()
+            self.offboard_setpoint_counter += 1
         
         if not self.obstacle_found :
             if self.vehicle_status.nav_state == VehicleStatus.NAVIGATION_STATE_OFFBOARD and self.square_check == 0:
@@ -699,14 +706,46 @@ class OffboardControl(Node):
                 elif self.z_achieved and round(self.vehicle_local_position.heading,2) == round(self.yaw_angle,2) :
                     self.get_logger().info(f"{self.square_check} {self.vehicle_local_position.heading} rotate completed - {self.vehicle_local_position.x} - {self.vehicle_local_position.y} - {self.vehicle_local_position.z}")
                     self.square_check += 1
-                    if ( self.forward_distance_x - self.vehicle_local_position.x ) >= 0  and self.yaw_angle == 1.57079:
-                        self.yaw_angle -= 1.57079
-                    elif ( self.forward_distance_x - self.vehicle_local_position.x ) >= 0  and self.yaw_angle == -1.57079 :
-                        self.yaw_angle += 1.57079
-                    elif ( self.forward_distance_x - self.vehicle_local_position.x ) < 0  and self.yaw_angle == 1.57079 :
-                        self.yaw_angle += 1.57079
-                    elif ( self.forward_distance_x - self.vehicle_local_position.x ) < 0  and self.yaw_angle == -1.57079 :
-                        self.yaw_angle -= 1.57079
+                    # if ( self.forward_distance_x - self.vehicle_local_position.x ) >= 0  and abs(self.yaw_angle) == 1.57079:
+                    #     self.yaw_angle = 0.0
+                    # elif ( self.forward_distance_x - self.vehicle_local_position.x ) < 0  and abs(self.yaw_angle) == 1.57079 :
+                    #     self.yaw_angle = 3.14158
+
+                    if self.actual_angle == -1.57079 :
+                        if ( self.forward_distance_x - self.vehicle_local_position.x ) >= 0 :
+                            self.actual_angle += 1.57079
+                        elif ( self.forward_distance_x - self.vehicle_local_position.x ) < 0 :
+                            self.actual_angle-= 1.57079
+                    elif self.actual_angle == 1.57079 :
+                        if ( self.forward_distance_x - self.vehicle_local_position.x ) >= 0 :
+                            self.actual_angle -= 1.57079
+                        elif ( self.forward_distance_x - self.vehicle_local_position.x ) < 0 :
+                            self.actual_angle += 1.57079
+                    elif self.actual_angle == 4.71237 :
+                        if ( self.forward_distance_x - self.vehicle_local_position.x ) >= 0 :
+                            self.actual_angle += 1.57079
+                        elif ( self.forward_distance_x - self.vehicle_local_position.x ) < 0 :
+                            self.actual_angle -= 1.57079
+                    elif self.actual_angle == -4.71237 :
+                        if ( self.forward_distance_x - self.vehicle_local_position.x ) >= 0 :
+                            self.actual_angle -= 1.57079
+                        elif ( self.forward_distance_x - self.vehicle_local_position.x ) < 0 :
+                            self.actual_angle += 1.57079
+
+                    if self.actual_angle > 0 and self.actual_angle > 3.14158 :
+                        self.yaw_angle = self.actual_angle - 6.28316
+                        self.actual_angle_difference = 6.28316
+                    elif self.actual_angle < 0 and self.actual_angle < -3.14158 :
+                        self.yaw_angle = 6.28316 + self.actual_angle
+                        self.actual_angle_difference = -6.28316
+                    else :
+                        self.yaw_angle = self.actual_angle
+                        self.actual_angle_difference = 0.0
+
+                    if abs(self.yaw_angle) == 0.0 :
+                        self.actual_angle_difference = 0.0
+                        self.actual_angle = 0.0
+
                     self.forward_obstract_distance[1] = 0.0
                     self.forward_obstract_distance[2] = 0.0
                     self.intermittent_distance_x = self.vehicle_local_position.x
@@ -788,15 +827,47 @@ class OffboardControl(Node):
                     # else :
                     #     self.yaw_angle -= 1.57079
                     self.get_logger().info(f"Before : {( self.forward_distance_y - self.vehicle_local_position.y )} - {self.yaw_angle}")
-                    if ( self.forward_distance_y - self.vehicle_local_position.y ) >= 0  and self.yaw_angle == 0.0:
-                        self.yaw_angle += 1.57079
-                    elif ( self.forward_distance_y - self.vehicle_local_position.y ) >= 0  and abs(self.yaw_angle) == 3.14158 :
-                        self.yaw_angle = 1.57079
-                    elif ( self.forward_distance_y - self.vehicle_local_position.y ) < 0  and self.yaw_angle == 0.0 :
-                        self.yaw_angle -= 1.57079
-                    elif ( self.forward_distance_y - self.vehicle_local_position.y ) < 0  and abs(self.yaw_angle) == 3.14158 :
-                        self.yaw_angle = -1.57079
-                    self.get_logger().info(f"After : {( self.forward_distance_y - self.vehicle_local_position.y )} - {self.yaw_angle}")
+                    # if ( self.forward_distance_y - self.vehicle_local_position.y ) >= 0  and abs(self.yaw_angle) == 0.0:
+                    #     self.yaw_angle = 1.57079
+                    # elif ( self.forward_distance_y - self.vehicle_local_position.y ) >= 0  and abs(self.yaw_angle) == 3.14158 :
+                    #     self.yaw_angle = 1.57079
+                    # elif ( self.forward_distance_y - self.vehicle_local_position.y ) < 0  and abs(self.yaw_angle) == 0.0 :
+                    #     self.yaw_angle = -1.57079
+                    # elif ( self.forward_distance_y - self.vehicle_local_position.y ) < 0  and abs(self.yaw_angle) == 3.14158 :
+                    #     self.yaw_angle = -1.57079
+
+
+                    if self.actual_angle == 0.0 :
+                        if ( self.forward_distance_y - self.vehicle_local_position.y ) >= 0 :
+                            self.actual_angle += 1.57079
+                        elif ( self.forward_distance_y - self.vehicle_local_position.y ) < 0 :
+                            self.actual_angle-= 1.57079
+                    elif self.actual_angle == 3.14158 :
+                        if ( self.forward_distance_y - self.vehicle_local_position.y ) >= 0 :
+                            self.actual_angle -= 1.57079
+                        elif ( self.forward_distance_y - self.vehicle_local_position.y ) < 0 :
+                            self.actual_angle += 1.57079
+                    elif self.actual_angle == -3.14158 :
+                        if ( self.forward_distance_y - self.vehicle_local_position.y ) >= 0 :
+                            self.actual_angle -= 1.57079
+                        elif ( self.forward_distance_y - self.vehicle_local_position.y ) < 0 :
+                            self.actual_angle += 1.57079
+
+                    if self.actual_angle > 0 and self.actual_angle > 3.14158 :
+                        self.yaw_angle = self.actual_angle - 6.28316
+                        self.actual_angle_difference = 6.28316
+                    elif self.actual_angle < 0 and self.actual_angle < -3.14158 :
+                        self.yaw_angle = 6.28316 + self.actual_angle
+                        self.actual_angle_difference = -6.28316
+                    else :
+                        self.yaw_angle = self.actual_angle
+                        self.actual_angle_difference = 0.0
+
+                    if abs(self.yaw_angle) == 0.0 :
+                        self.actual_angle_difference = 0.0
+                        self.actual_angle = 0.0
+
+                    self.get_logger().info(f"After : {( self.forward_distance_y - self.vehicle_local_position.y )} - {self.yaw_angle} - {self.actual_angle_difference} - {self.actual_angle}")
                     self.forward_obstract_distance[1] = 0.0
                     self.forward_obstract_distance[2] = 0.0
                     self.intermittent_distance_x = self.vehicle_local_position.x
@@ -878,15 +949,47 @@ class OffboardControl(Node):
                     self.y_achieved = True
 
                     self.get_logger().info(f"Before : {( self.forward_distance_x - self.vehicle_local_position.x )} - {self.yaw_angle}")
-                    if ( self.forward_distance_x - self.vehicle_local_position.x ) >= 0  and self.yaw_angle == 1.57079:
-                        self.yaw_angle -= 1.57079
-                    elif ( self.forward_distance_x - self.vehicle_local_position.x ) >= 0  and self.yaw_angle == -1.57079 :
-                        self.yaw_angle += 1.57079
-                    elif ( self.forward_distance_x - self.vehicle_local_position.x ) < 0  and self.yaw_angle == 1.57079 :
-                        self.yaw_angle += 1.57079
-                    elif ( self.forward_distance_x - self.vehicle_local_position.x ) < 0  and self.yaw_angle == -1.57079 :
-                        self.yaw_angle -= 1.57079
-                    self.get_logger().info(f"After : {( self.forward_distance_x - self.vehicle_local_position.x )} - {self.yaw_angle}")
+                    # if ( self.forward_distance_x - self.vehicle_local_position.x ) >= 0  and abs(self.yaw_angle) == 1.57079:
+                    #     self.yaw_angle = 0.0
+                    # elif ( self.forward_distance_x - self.vehicle_local_position.x ) < 0  and abs(self.yaw_angle) == 1.57079 :
+                    #     self.yaw_angle = 3.14158
+
+                    if self.actual_angle == -1.57079 :
+                        if ( self.forward_distance_x - self.vehicle_local_position.x ) >= 0 :
+                            self.actual_angle += 1.57079
+                        elif ( self.forward_distance_x - self.vehicle_local_position.x ) < 0 :
+                            self.actual_angle-= 1.57079
+                    elif self.actual_angle == 1.57079 :
+                        if ( self.forward_distance_x - self.vehicle_local_position.x ) >= 0 :
+                            self.actual_angle -= 1.57079
+                        elif ( self.forward_distance_x - self.vehicle_local_position.x ) < 0 :
+                            self.actual_angle += 1.57079
+                    elif self.actual_angle == 4.71237 :
+                        if ( self.forward_distance_x - self.vehicle_local_position.x ) >= 0 :
+                            self.actual_angle += 1.57079
+                        elif ( self.forward_distance_x - self.vehicle_local_position.x ) < 0 :
+                            self.actual_angle -= 1.57079
+                    elif self.actual_angle == -4.71237 :
+                        if ( self.forward_distance_x - self.vehicle_local_position.x ) >= 0 :
+                            self.actual_angle -= 1.57079
+                        elif ( self.forward_distance_x - self.vehicle_local_position.x ) < 0 :
+                            self.actual_angle += 1.57079
+
+                    if self.actual_angle > 0 and self.actual_angle > 3.14158 :
+                        self.yaw_angle = self.actual_angle - 6.28316
+                        self.actual_angle_difference = 6.28316
+                    elif self.actual_angle < 0 and self.actual_angle < -3.14158 :
+                        self.yaw_angle = 6.28316 + self.actual_angle
+                        self.actual_angle_difference = -6.28316
+                    else :
+                        self.yaw_angle = self.actual_angle
+                        self.actual_angle_difference = 0.0
+
+                    if abs(self.yaw_angle) == 0.0 :
+                        self.actual_angle_difference = 0.0
+                        self.actual_angle = 0.0
+
+                    self.get_logger().info(f"After : {( self.forward_distance_x - self.vehicle_local_position.x )} - {self.yaw_angle} - {self.actual_angle_difference} - {self.actual_angle}")
                     self.forward_obstract_distance[1] = 0.0
                     self.forward_obstract_distance[2] = 0.0
                     self.intermittent_distance_x = self.vehicle_local_position.x
@@ -909,15 +1012,47 @@ class OffboardControl(Node):
                 self.x_achieved = True
 
                 self.get_logger().info(f"Before : {( self.forward_distance_y - self.vehicle_local_position.y )} - {self.yaw_angle}")
-                if ( self.forward_distance_y - self.vehicle_local_position.y ) >= 0  and self.yaw_angle == 0.0:
-                    self.yaw_angle += 1.57079
-                elif ( self.forward_distance_y - self.vehicle_local_position.y ) >= 0  and abs(self.yaw_angle) == 3.14158 :
-                    self.yaw_angle = 1.57079
-                elif ( self.forward_distance_y - self.vehicle_local_position.y ) < 0  and self.yaw_angle == 0.0 :
-                    self.yaw_angle -= 1.57079
-                elif ( self.forward_distance_y - self.vehicle_local_position.y ) < 0  and abs(self.yaw_angle) == 3.14158 :
-                    self.yaw_angle = -1.57079
-                self.get_logger().info(f"After : {( self.forward_distance_y - self.vehicle_local_position.y )} - {self.yaw_angle}")
+                # if ( self.forward_distance_y - self.vehicle_local_position.y ) >= 0  and abs(self.yaw_angle) == 0.0:
+                #     self.yaw_angle = 1.57079
+                # elif ( self.forward_distance_y - self.vehicle_local_position.y ) >= 0  and abs(self.yaw_angle) == 3.14158 :
+                #     self.yaw_angle = 1.57079
+                # elif ( self.forward_distance_y - self.vehicle_local_position.y ) < 0  and abs(self.yaw_angle) == 0.0 :
+                #     self.yaw_angle = -1.57079
+                # elif ( self.forward_distance_y - self.vehicle_local_position.y ) < 0  and abs(self.yaw_angle) == 3.14158 :
+                #     self.yaw_angle = -1.57079
+
+                
+                if self.actual_angle == 0.0 :
+                    if ( self.forward_distance_y - self.vehicle_local_position.y ) >= 0 :
+                        self.actual_angle += 1.57079
+                    elif ( self.forward_distance_y - self.vehicle_local_position.y ) < 0 :
+                        self.actual_angle-= 1.57079
+                elif self.actual_angle == 3.14158 :
+                    if ( self.forward_distance_y - self.vehicle_local_position.y ) >= 0 :
+                        self.actual_angle -= 1.57079
+                    elif ( self.forward_distance_y - self.vehicle_local_position.y ) < 0 :
+                        self.actual_angle += 1.57079
+                elif self.actual_angle == -3.14158 :
+                    if ( self.forward_distance_y - self.vehicle_local_position.y ) >= 0 :
+                        self.actual_angle -= 1.57079
+                    elif ( self.forward_distance_y - self.vehicle_local_position.y ) < 0 :
+                        self.actual_angle += 1.57079
+
+                if self.actual_angle > 0 and self.actual_angle > 3.14158 :
+                    self.yaw_angle = self.actual_angle - 6.28316
+                    self.actual_angle_difference = 6.28316
+                elif self.actual_angle < 0 and self.actual_angle < -3.14158 :
+                    self.yaw_angle = 6.28316 + self.actual_angle
+                    self.actual_angle_difference = -6.28316
+                else :
+                    self.yaw_angle = self.actual_angle
+                    self.actual_angle_difference = 0.0
+
+                if abs(self.yaw_angle) == 0.0 :
+                    self.actual_angle_difference = 0.0
+                    self.actual_angle = 0.0
+
+                self.get_logger().info(f"After : {( self.forward_distance_y - self.vehicle_local_position.y )} - {self.yaw_angle} - {self.actual_angle_difference} - {self.actual_angle}")
                 self.forward_obstract_distance[1] = 0.0
                 self.forward_obstract_distance[2] = 0.0
                 self.intermittent_distance_x = self.vehicle_local_position.x
@@ -932,30 +1067,62 @@ class OffboardControl(Node):
                     exit(0)
         elif direction == "y" :
             if ( not self.y_achieved ) and self.y_rotate_achieved and ( round(self.vehicle_local_position.y,2) > round(self.forward_distance_y,2)-0.25 and round(self.vehicle_local_position.y,2) < round(self.forward_distance_y,2)+0.25 ) :
-                    self.get_logger().info(f"y {self.square_check} square completed - {self.vehicle_local_position.x} - {self.vehicle_local_position.y} - {self.vehicle_local_position.z}")
-                    self.y_achieved = True
-                    self.get_logger().info(f"Before : {( self.forward_distance_x - self.vehicle_local_position.x )} - {self.yaw_angle}")
-                    if ( self.forward_distance_x - self.vehicle_local_position.x ) >= 0  and self.yaw_angle == 1.57079:
-                        self.yaw_angle -= 1.57079
-                    elif ( self.forward_distance_x - self.vehicle_local_position.x ) >= 0  and self.yaw_angle == -1.57079 :
-                        self.yaw_angle += 1.57079
-                    elif ( self.forward_distance_x - self.vehicle_local_position.x ) < 0  and self.yaw_angle == 1.57079 :
-                        self.yaw_angle += 1.57079
-                    elif ( self.forward_distance_x - self.vehicle_local_position.x ) < 0  and self.yaw_angle == -1.57079 :
-                        self.yaw_angle -= 1.57079
-                    self.get_logger().info(f"After : {( self.forward_distance_x - self.vehicle_local_position.x )} - {self.yaw_angle}")
-                    self.forward_obstract_distance[1] = 0.0
-                    self.forward_obstract_distance[2] = 0.0
-                    self.intermittent_distance_x = self.vehicle_local_position.x
-                    self.intermittent_distance_y = self.vehicle_local_position.y
-                    if ( self.vehicle_local_position.x < self.forward_distance_x-0.25 ) or ( self.vehicle_local_position.x > self.forward_distance_x+0.25 ) :
-                        self.x_achieved = False
-                        self.x_rotate_achieved = False
-                        self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
-                        return True
-                    else :
-                        self.land()
-                        exit(0)
+                self.get_logger().info(f"y {self.square_check} square completed - {self.vehicle_local_position.x} - {self.vehicle_local_position.y} - {self.vehicle_local_position.z}")
+                self.y_achieved = True
+                self.get_logger().info(f"Before : {( self.forward_distance_x - self.vehicle_local_position.x )} - {self.yaw_angle}")
+                # if ( self.forward_distance_x - self.vehicle_local_position.x ) >= 0  and abs(self.yaw_angle) == 1.57079:
+                #     self.yaw_angle = 0.0
+                # elif ( self.forward_distance_x - self.vehicle_local_position.x ) < 0  and abs(self.yaw_angle) == 1.57079 :
+                #     self.yaw_angle = 3.14158
+
+                if self.actual_angle == -1.57079 :
+                    if ( self.forward_distance_x - self.vehicle_local_position.x ) >= 0 :
+                        self.actual_angle += 1.57079
+                    elif ( self.forward_distance_x - self.vehicle_local_position.x ) < 0 :
+                        self.actual_angle-= 1.57079
+                elif self.actual_angle == 1.57079 :
+                    if ( self.forward_distance_x - self.vehicle_local_position.x ) >= 0 :
+                        self.actual_angle -= 1.57079
+                    elif ( self.forward_distance_x - self.vehicle_local_position.x ) < 0 :
+                        self.actual_angle += 1.57079
+                elif self.actual_angle == 4.71237 :
+                    if ( self.forward_distance_x - self.vehicle_local_position.x ) >= 0 :
+                        self.actual_angle += 1.57079
+                    elif ( self.forward_distance_x - self.vehicle_local_position.x ) < 0 :
+                        self.actual_angle -= 1.57079
+                elif self.actual_angle == -4.71237 :
+                    if ( self.forward_distance_x - self.vehicle_local_position.x ) >= 0 :
+                        self.actual_angle -= 1.57079
+                    elif ( self.forward_distance_x - self.vehicle_local_position.x ) < 0 :
+                        self.actual_angle += 1.57079
+
+                if self.actual_angle > 0 and self.actual_angle > 3.14158 :
+                    self.yaw_angle = self.actual_angle - 6.28316
+                    self.actual_angle_difference = 6.28316
+                elif self.actual_angle < 0 and self.actual_angle < -3.14158 :
+                    self.yaw_angle = 6.28316 + self.actual_angle
+                    self.actual_angle_difference = -6.28316
+                else :
+                    self.yaw_angle = self.actual_angle
+                    self.actual_angle_difference = 0.0
+
+                if abs(self.yaw_angle) == 0.0 :
+                    self.actual_angle_difference = 0.0
+                    self.actual_angle = 0.0
+
+                self.get_logger().info(f"After : {( self.forward_distance_x - self.vehicle_local_position.x )} - {self.yaw_angle} - {self.actual_angle_difference} - {self.actual_angle}")
+                self.forward_obstract_distance[1] = 0.0
+                self.forward_obstract_distance[2] = 0.0
+                self.intermittent_distance_x = self.vehicle_local_position.x
+                self.intermittent_distance_y = self.vehicle_local_position.y
+                if ( self.vehicle_local_position.x < self.forward_distance_x-0.25 ) or ( self.vehicle_local_position.x > self.forward_distance_x+0.25 ) :
+                    self.x_achieved = False
+                    self.x_rotate_achieved = False
+                    self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
+                    return True
+                else :
+                    self.land()
+                    exit(0)
         return False
 
 
