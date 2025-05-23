@@ -93,7 +93,7 @@ class OffboardControl(Node):
         previous_x = self.vehicle_local_position.x
         previous_y = self.vehicle_local_position.y
         self.vehicle_local_position = vehicle_local_position
-        self.drone_x_data.append(self.vehicle_local_position.x)
+        self.drone_x_data.append(-1*self.vehicle_local_position.x)
         self.drone_y_data.append(self.vehicle_local_position.y)
         if self.forward_distance_x - self.vehicle_local_position.x >= 0:
             self.drone_current_direction[0] = True
@@ -119,7 +119,7 @@ class OffboardControl(Node):
         if self.z_achieved and ( ( not self.x_achieved and self.x_rotate_achieved ) or ( not self.y_achieved and self.y_rotate_achieved ) ):
             obstacle_distances = [(distance_idx,lidar_msg.ranges[distance_idx]) for distance_idx in range(len(lidar_msg.ranges)) if lidar_msg.ranges[distance_idx] < 5.5]
 
-            # self.get_logger().info(f'obstacle_distances - {obstacle_distances}')
+            self.get_logger().info(f'obstacle_distances - {obstacle_distances}')
             for obstacle_distance in obstacle_distances :
                 # if -math.radians(45) + self.vehicle_local_position.heading + math.radians(obstacle_distance[0]*(0.72)) > 6.28316 :
                 #     radians = ( - math.radians(45) + self.vehicle_local_position.heading + math.radians(obstacle_distance[0]*(0.72))) - math.radians(360)
@@ -131,7 +131,12 @@ class OffboardControl(Node):
                 #     radians = math.radians(360) - math.radians(45) + self.vehicle_local_position.heading + math.radians(obstacle_distance[0]*(0.72))
                 # else :
                 #     radians = -math.radians(45) + self.vehicle_local_position.heading + math.radians(obstacle_distance[0]*(0.72))
-                radians = (-1*math.radians(45)) + self.actual_angle_difference + self.vehicle_local_position.heading + math.radians(obstacle_distance[0]*(0.72))
+                # if ( not self.x_achieved and not self.drone_current_direction[0] ) or ( not self.y_achieved and not self.drone_current_direction[1] ) :
+                #     radians = math.radians(180) + (-1*math.radians(45)) + self.actual_angle_difference + self.vehicle_local_position.heading + math.radians(obstacle_distance[0]*(5))
+                # else :
+                #     radians = (-1*math.radians(45)) + self.actual_angle_difference + self.vehicle_local_position.heading + math.radians(obstacle_distance[0]*(5))
+                # radians = (math.radians(45)) +  self.actual_angle_difference + self.vehicle_local_position.heading - math.radians(obstacle_distance[0]*(5))
+                radians = math.radians(45) + math.radians(90) - self.actual_angle_difference - self.vehicle_local_position.heading + math.radians(obstacle_distance[0]*(5))
                 # if 45 + 90 - self.yaw_angle_degree + (-1*obstacle_distance[0]*(0.72)) < 0 :
                 #     radians = math.radians(360 + 45 + 90 - self.yaw_angle_degree + (-1*(obstacle_distance[0]*(0.72))))
                 # else :
@@ -140,7 +145,7 @@ class OffboardControl(Node):
                 sin_value = np.sin(radians)
                 relative_obstacle_x = (obstacle_distance[1])*cos_value      
                 relative_obstacle_y = (obstacle_distance[1])*sin_value
-                absolute_obstacle_x = relative_obstacle_x + (self.vehicle_local_position.x)
+                absolute_obstacle_x = relative_obstacle_x + (-1*self.vehicle_local_position.x)
                 absolute_obstacle_y = relative_obstacle_y + self.vehicle_local_position.y
                 # absolute_obstacle_z = -1*self.vehicle_local_position.z
 
@@ -153,8 +158,8 @@ class OffboardControl(Node):
             # self.get_logger().info(f'lidar angle - {[360 + 45 + 90 - self.yaw_angle_degree + (-1*(idx*lidar_msg.increment)) if 45 + 90 - self.yaw_angle_degree + (-1*idx*lidar_msg.increment) < 0 else 45 + 90 - self.yaw_angle_degree + (-1*idx*lidar_msg.increment) for idx in range(len(lidar_msg.ranges))]}')
             # self.get_logger().info(f'lidar angle - {[math.degrees(6.28319 + 0.785398 + 1.5708 - self.vehicle_local_position.heading - - math.radians(idx*lidar_msg.increment)) if 0.785398 + 1.5708 - self.vehicle_local_position.heading - math.radians(idx*lidar_msg.increment) < 0 else math.degrees(0.785398 + 1.5708 - self.vehicle_local_position.heading - math.radians(idx*lidar_msg.increment)) for idx in range(len(lidar_msg.ranges))]}')
             # self.get_logger().info(f'local position - {self.vehicle_local_position.x} - {self.vehicle_local_position.y}')
-            # self.get_logger().info(f'x_data - {self.x_data}')
-            # self.get_logger().info(f'y_data - {self.y_data}')
+            self.get_logger().info(f'x_data - {self.x_data[-len(obstacle_distances):]}')
+            self.get_logger().info(f'y_data - {self.y_data[-len(obstacle_distances):]}')
             map_data = {
                 "x" : self.x_data,
                 "y" : self.y_data,
@@ -167,8 +172,9 @@ class OffboardControl(Node):
             shutil.copy("/home/amit-singh/Downloads/qudacopter/tmp_map_data.json", "/home/amit-singh/Downloads/qudacopter/map_data.json")
             with open("/home/amit-singh/Downloads/qudacopter/tmp_map_data.json", "w") as outfile:
                 json.dump(map_data, outfile,indent=4)
-            # self.land()
-            # exit(0)
+            # if not self.y_achieved and self.y_rotate_achieved :
+            #     self.land()
+            #     exit(0)
             # self.axes.scatter(vechile_position_x,vechile_position_y,c="#fd72c0",marker=".",s=5)
 
     # def update_plot(self):
@@ -553,18 +559,18 @@ class OffboardControl(Node):
 
     def obstacle_and_direction( self, msg, threshold ):
         msg = msg.ranges.tolist()
-        obstacle_distances_front = msg[25:100] #msg[5:13] #msg[:18] #msg[:8]+msg[-8:]
-        obstacle_distances_left = msg[150:225] #msg[8:34] 
-        obstacle_distances_back = msg[275:350] #msg[34:50]
-        obstacle_distances_right = msg[400:475]
+        obstacle_distances_front = msg[5:13] #msg[25:100] #msg[5:13] #msg[:18] #msg[:8]+msg[-8:]
+        obstacle_distances_left = msg[23:31] #msg[150:225] #msg[8:34] 
+        obstacle_distances_back = msg[41:49] #msg[275:350] #msg[34:50]
+        obstacle_distances_right = msg[59:67] #msg[400:475]
 
-        right_up_corner_distances = msg[-20:]+msg[:20]
-        left_up_corner_distances = msg[105:145]
-        left_down_corner_distances = msg[230:270]
-        right_down_corner_distances = msg[355:395]
+        right_up_corner_distances = msg[-2:]+msg[2:] #msg[-20:]+msg[:20]
+        left_up_corner_distances = msg[16:20] #msg[105:145]
+        left_down_corner_distances = msg[34:38] #msg[230:270]
+        right_down_corner_distances = msg[52:56] #msg[355:395]
 
-        front_left_distance = msg[25:50]
-        front_right_distance = msg[50:100]
+        front_left_distance = msg[5:9] #msg[25:50]
+        front_right_distance = msg[9:13] #msg[50:100]
 
         # obstacle_distances_centre = msg[61:65]
         back_obstacle_found = len([*filter(lambda x: x < threshold, obstacle_distances_back)])
@@ -710,7 +716,7 @@ class OffboardControl(Node):
                     #     self.yaw_angle = 0.0
                     # elif ( self.forward_distance_x - self.vehicle_local_position.x ) < 0  and abs(self.yaw_angle) == 1.57079 :
                     #     self.yaw_angle = 3.14158
-
+                    self.get_logger().info(f"Before : {( self.forward_distance_y - self.vehicle_local_position.y )} - {self.yaw_angle}")
                     if self.actual_angle == -1.57079 :
                         if ( self.forward_distance_x - self.vehicle_local_position.x ) >= 0 :
                             self.actual_angle += 1.57079
@@ -746,6 +752,7 @@ class OffboardControl(Node):
                         self.actual_angle_difference = 0.0
                         self.actual_angle = 0.0
 
+                    self.get_logger().info(f"After : {( self.forward_distance_y - self.vehicle_local_position.y )} - {self.yaw_angle} - {self.actual_angle_difference} - {self.actual_angle}")
                     self.forward_obstract_distance[1] = 0.0
                     self.forward_obstract_distance[2] = 0.0
                     self.intermittent_distance_x = self.vehicle_local_position.x
