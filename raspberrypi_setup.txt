@@ -1,0 +1,81 @@
+export MAKEFLAGS=-j2
+echo $MAKEFLAGS
+
+git clone https://github.com/PX4/px4_msgs.git
+change branch as required
+
+git clone https://github.com/PX4/px4_ros_com.git
+change branch as required
+
+colcon build --symlink-install --parallel-workers 2
+
+source install/local_setup.bash
+ros2 run px4_ros_com offboard_control
+
+
+/home/amit-singh/ws_sensor_combined/src/px4_ros_com/src/examples/offboard_py
+
+colcon build --packages-select px4_ros_com --symlink-install --parallel-workers 2
+
+
+ros2 pkg create --build-type ament_python coordinates_publisher
+
+ros2 pkg create --build-type ament_python --license Apache-2.0 --node-name my_node my_package
+
+
+ros2 launch px4_offboard offboard_position_control.launch.py
+
+
+ros2 pkg create --build-type ament_python --license Apache-2.0 offboard
+
+colcon build --packages-select offboard --symlink-install --parallel-workers 2
+
+To add gz topic to ros2 topic
+
+- Installing ros-gz-bridge
+	sudo apt-get install ros-jazzy-ros-gz-bridge
+
+- Publishing scan topic of gz to ros2 topic gz
+	ros2 run ros_gz_bridge parameter_bridge /scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan
+	
+	
+Start up commands - 
+	- make px4_sitl gz_x500_lidar_2d_home
+	- source /opt/ros/jazzy/setup.bash
+	- colcon build --packages-select offboard --symlink-install --parallel-workers 2
+	- source install/local_setup.bash
+	- ros2 launch offboard offboard_control_traverse.launch.py
+	- colcon build --packages-select sllidar_ros2 --symlink-install --parallel-workers 2
+	- ros2 launch sllidar_ros2 sllidar_c1_launch.py
+	
+raspberry camera setup ( https://github.com/raspberrypi/libcamera ) ( https://askubuntu.com/questions/1529421/camera-setting-up-on-ubuntu-24-for-raspberry-pi-5 )
+	- sudo apt install -y python3-pip git python3-jinja2
+	- sudo apt install -y libboost-dev
+	- sudo apt install -y libgnutls28-dev openssl libtiff-dev pybind11-dev
+	- sudo apt install -y qtbase5-dev libqt5core5a libqt5widgets ( sudo apt install -y qtbase5-dev libqt5core5a libqt5widgets5t64 )
+	- sudo apt install -y meson cmake
+	- sudo apt install -y python3-yaml python3-ply
+	- sudo apt install -y libglib2.0-dev libgstreamer-plugins-base1.0-dev
+	- sudo apt install -y libevent-dev
+	- git clone https://github.com/raspberrypi/libcamera.git
+	- cd libcamera
+	- meson setup build --buildtype=release -Dpipelines=rpi/vc4,rpi/pisp -Dipas=rpi/vc4,rpi/pisp -Dv4l2=true -Dgstreamer=enabled -Dtest=false -Dlc-compliance=disabled -Dcam=disabled -Dqcam=disabled -Ddocumentation=disabled -Dpycamera=enabled ( meson setup build --buildtype=release -Dpipelines=rpi/vc4,rpi/pisp -Dipas=rpi/vc4,rpi/pisp -Dv4l2=enabled -Dgstreamer=disabled -Dtest=false -Dlc-compliance=disabled -Dcam=enabled -Dqcam=disabled -Ddocumentation=disabled -Dpycamera=enabled )
+	- ninja -C build install
+	- sudo ninja -C build install
+	- sudo apt install libcamera-tools
+	- export LD_PRELOAD=/usr/local/lib/aarch64-linux-gnu/libcamera.so.0.5:/usr/local/lib/aarch64-linux-gnu/libcamera-base.so.0.5:/usr/local/lib/aarch64-linux-gnu/libpisp.so.1
+	- sudo apt install libcap-dev
+	- git clone https://github.com/raspberrypi/rpicam-apps.git ( https://askubuntu.com/questions/1542652/getting-rpicam-tools-rpicam-apps-working-on-ubuntu-22-04-lts-for-the-raspber )
+	- cd rpicam-apps/
+	- sudo apt install cmake libboost-program-options-dev libdrm-dev libexif-dev
+	- sudo apt install ffmpeg libavcodec-extra libavcodec-dev libavdevice-dev libpng-dev libpng-tools libepoxy-dev 
+	- sudo apt install qt5-qmake qtmultimedia5-dev
+	- meson setup build -Denable_libav=enabled -Denable_drm=enabled -Denable_egl=enabled -Denable_qt=enabled -Denable_opencv=disabled -Denable_tflite=disabled -Denable_hailo=disabled
+	- meson compile -C build
+	- sudo meson install -C build
+	
+	
+	
+	
+	rpicam-still -t 3000 -o test.jpg
+	rpicam-vid -t 10000 -o test.mp4
