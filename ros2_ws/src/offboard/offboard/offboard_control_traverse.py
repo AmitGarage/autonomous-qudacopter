@@ -308,13 +308,13 @@ class OffboardControl(Node):
                         self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
                         self.get_logger().info(f'Left up and down corner - Moving right in {+(0.25*self.drone_current_direction_sign[0])} direction - {self.drone_current_direction} - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
                     elif front_minimum > ( self.safe_distance_from_qudacopter*2 ) and ( (right_down_corner_distances_minimum < ( self.safe_distance_from_qudacopter*2 )) or (left_down_corner_distances_minimum < ( self.safe_distance_from_qudacopter*2 ))) :
-                        self.intermittent_distance_x = self.vehicle_local_position.x+(0.25*self.drone_current_direction_sign[0]*np.sign(self.vehicle_local_position.x))
+                        self.intermittent_distance_x = self.vehicle_local_position.x+(0.25*self.drone_current_direction_sign[0])
                         self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
-                        self.get_logger().info(f'Down corner - Moving up in {+(0.25*self.drone_current_direction_sign[0]*np.sign(self.vehicle_local_position.x))} direction - {self.drone_current_direction} - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
+                        self.get_logger().info(f'Down corner - Moving up in {+(0.25*self.drone_current_direction_sign[0])} direction - {self.drone_current_direction} - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
                     elif back_minimum > ( self.safe_distance_from_qudacopter*2 ) and ( (right_up_corner_distances_minimum < ( self.safe_distance_from_qudacopter*2 )) or (left_up_corner_distances_minimum < ( self.safe_distance_from_qudacopter*2 ))) :
-                        self.intermittent_distance_x = self.vehicle_local_position.x-(0.25*self.drone_current_direction_sign[0]*np.sign(self.vehicle_local_position.x))
+                        self.intermittent_distance_x = self.vehicle_local_position.x-(0.25*self.drone_current_direction_sign[0])
                         self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
-                        self.get_logger().info(f'Up corner - Moving down in {-(0.25*self.drone_current_direction_sign[0]*np.sign(self.vehicle_local_position.x))} direction - {self.drone_current_direction} - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
+                        self.get_logger().info(f'Up corner - Moving down in {-(0.25*self.drone_current_direction_sign[0])} direction - {self.drone_current_direction} - {self.intermittent_distance_x} - {self.intermittent_distance_y} - {self.vehicle_local_position.z}')
                     else :
                         if np.sign(self.drone_current_direction_sign[0]) == np.sign(self.continue_direction[1]) :
                             y_diff = ((abs(right_minimum - self.safe_distance_from_qudacopter - 0.1)))
