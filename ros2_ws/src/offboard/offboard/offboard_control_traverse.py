@@ -115,6 +115,7 @@ class OffboardControl(Node):
     def vehicle_status_callback(self, vehicle_status):
         """Callback function for vehicle_status topic subscriber."""
         self.vehicle_status = vehicle_status
+        # self.get_logger().info(f'vehicle_status : {self.vehicle_status}') 
 
     def lidar_processing( self , lidar_msg) :
 
