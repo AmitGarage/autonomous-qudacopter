@@ -1,21 +1,27 @@
 from launch import LaunchDescription
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
-from launch.actions import ExecuteProcess
 import os
 import yaml
 
 def generate_launch_description():
-    package_dir = get_package_share_directory('offboard')
-    config_file_path = os.path.join(package_dir,'config','params.yaml')
-    print("config_file_path - ",config_file_path)
-    parameters = load_yaml(config_file_path)
+    params_file = os.path.join(get_package_share_directory('offboard'), 'config','params.yaml')
+    print("params_file_path - ",params_file)
+    # parameters = load_yaml(config_file_path)
     # print("parameters - ",parameters["ros__parameters"]["traverse_coordinates"])
 
-    micro_ros_agent = ExecuteProcess(
-        cmd=[[
-            'MicroXRCEAgent udp4 -p 8888 -v '
-        ]],
+    # micro_ros_agent = ExecuteProcess(
+    #     cmd=[[
+    #         'MicroXRCEAgent udp4 -p 8888 -v '
+    #     ]],
+    #     shell=True
+    # )
+
+    micro_ros_agent = Node(
+        package='offboard',
+        executable='microagent_node',
+        parameters=[params_file],
+        output='screen',
         shell=True
     )
 
@@ -33,11 +39,11 @@ def generate_launch_description():
         offboard_control_node
     ])
 
-def load_yaml(yaml_file_path) :
-    try:
-        with open(yaml_file_path, 'r') as file:
-            parameters = yaml.safe_load(file)
-            return parameters
-    except FileNotFoundError:
-        print(f"Error: File not found: {yaml_file_path}")
-        return None
+# def load_yaml(yaml_file_path) :
+#     try:
+#         with open(yaml_file_path, 'r') as file:
+#             parameters = yaml.safe_load(file)
+#             return parameters
+#     except FileNotFoundError:
+#         print(f"Error: File not found: {yaml_file_path}")
+#         return None

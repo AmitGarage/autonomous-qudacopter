@@ -1,3 +1,6 @@
-ros__parameters:
-  fcu_url: "udp://:14550@"
-  gcs_url: "udp://:115200@"
+microagent:
+  ros__parameters:
+    mode: "udp"  # Change to "udp" if needed
+    serial_device: "/dev/serial0"
+    baud_rate: 921600
+    udp_port: 8888

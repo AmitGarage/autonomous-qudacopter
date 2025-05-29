@@ -27,6 +27,7 @@ setup(
             'offboard_control = offboard.offboard_control:main',
             'offboard_control_obstacle = offboard.offboard_control_obstacle:main',
             'offboard_control_traverse = offboard.offboard_control_traverse:main',
+            'microagent_node = offboard.microagent_start_node:main',
         ],
     },
 )

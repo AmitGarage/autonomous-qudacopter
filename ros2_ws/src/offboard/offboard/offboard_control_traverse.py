@@ -5,7 +5,6 @@ from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
 from px4_msgs.msg import OffboardControlMode, TrajectorySetpoint, VehicleCommand, VehicleLocalPosition, VehicleStatus #, ObstacleDistance
 from sensor_msgs.msg import LaserScan
-from file_monitor_pkg.msg import Matrix
 import time
 import math
 import numpy as np
