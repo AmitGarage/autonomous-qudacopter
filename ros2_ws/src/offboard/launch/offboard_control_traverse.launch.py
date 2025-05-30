@@ -27,9 +27,8 @@ def generate_launch_description():
 
     offboard_control_node = Node(
         package='offboard',
-        namespace='offboard',
         executable='offboard_control_traverse',
-        name='control',
+        parameters=[params_file],
         output='screen',
         shell=True,
     )

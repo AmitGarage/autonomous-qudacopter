@@ -1,6 +1,11 @@
 microagent:
   ros__parameters:
-    mode: "udp"  # Change to "udp" if needed
-    serial_device: "/dev/serial0"
+    mode: "udp"  # Change to "udp" or "serial" if needed
+    serial_device: "/dev/ttyAMA0"
     baud_rate: 921600
     udp_port: 8888
+
+offboard_control:
+  ros__parameters:
+    static_log_file_name: "/home/amit-singh/Downloads/qudacopter/start_time_offboard_control.log"
+    lidar_topic_name: "/scan"

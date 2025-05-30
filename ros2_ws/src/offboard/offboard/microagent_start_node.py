@@ -8,7 +8,7 @@ class MicroAgentNode(Node):
 
         # Declare parameters
         self.declare_parameter('mode', 'serial')
-        self.declare_parameter('serial_device', '/dev/serial0')
+        self.declare_parameter('serial_device', '/dev/ttyAMA0')
         self.declare_parameter('baud_rate', 921600)
         self.declare_parameter('udp_port', 8888)
 
