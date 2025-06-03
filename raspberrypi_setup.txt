@@ -80,3 +80,5 @@ raspberry camera setup ( https://github.com/raspberrypi/libcamera ) ( https://as
 	
 	rpicam-still -t 3000 -o test.jpg
 	rpicam-vid -t 10000 -o test.mp4
+
+
