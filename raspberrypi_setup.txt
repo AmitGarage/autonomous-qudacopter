@@ -2,6 +2,7 @@ For parallel processing
 export MAKEFLAGS=-j2
 echo $MAKEFLAGS
 
+For px4 message setup
 git clone https://github.com/PX4/px4_msgs.git
 change branch as required
 
