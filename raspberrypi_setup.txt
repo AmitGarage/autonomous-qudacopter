@@ -76,10 +76,6 @@ raspberry camera setup ( https://github.com/raspberrypi/libcamera ) ( https://as
 	- meson compile -C build
 	- sudo meson install -C build
 	
-	
-	
-	
-	rpicam-still -t 3000 -o test.jpg
-	rpicam-vid -t 10000 -o test.mp4
-
-
+rpicam commands
+	- rpicam-still -t 3000 -o test.jpg
+	- rpicam-vid -t 10000 -o test.mp4

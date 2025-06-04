@@ -14,6 +14,7 @@ import shutil
 import json
 import logging
 from utils.convert_log_file import convert
+from custom_msgs.msg import TraverseCoordinates
 
 
 class OffboardControl(Node):

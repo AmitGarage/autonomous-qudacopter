@@ -19,5 +19,6 @@ def convert( log_filename ) :
     with open( log_filename.replace(".log",".csv") , "w" ) as _file :
         _file.write(csv_file_data)
 
-log_filename = "/home/amit-singh/Downloads/qudacopter/20250530175657_offboard_control.log"
-convert( log_filename ) 
+## Script testing code
+#log_filename = "/home/amit-singh/Downloads/qudacopter/20250530175657_offboard_control.log"
+#convert( log_filename ) 
