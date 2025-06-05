@@ -26,6 +26,8 @@ class OffboardControl(Node):
         # Declare parameters
         self.declare_parameter('lidar_topic_name', '/scan')
         self.declare_parameter('static_log_file_name', '')
+        self.declare_parameter('lidar_rotation_anticlockwise_direction',False)
+        self.declare_parameter('lidar_angle_resolution_in_degree',0.5)
         # self.declare_parameter('baud_rate', 921600)
         # self.declare_parameter('udp_port', 8888)
 
@@ -113,7 +115,8 @@ class OffboardControl(Node):
         self.y_rotate_achieved = False
         self.drone_current_direction = [True,True]
         self.drone_current_direction_sign = [+1,+1]
-        self.lidar_direction_reverse = True
+        self.lidar_direction_reverse = self.get_parameter('lidar_rotation_anticlockwise_direction').get_parameter_value().bool_value
+        self.lidar_angle_resolution_in_degree = self.get_parameter('lidar_angle_resolution_in_degree').get_parameter_value().double_value
 
         self.x_data = []
         self.y_data = []
@@ -178,7 +181,7 @@ class OffboardControl(Node):
                 #     radians = (-1*math.radians(45)) + self.actual_angle_difference + self.vehicle_local_position.heading + math.radians(obstacle_distance[0]*(5))
                 # radians = (math.radians(45)) +  self.actual_angle_difference + self.vehicle_local_position.heading - math.radians(obstacle_distance[0]*(5))
                 # radians = math.radians(45) + math.radians(90) - self.actual_angle_difference - self.vehicle_local_position.heading + math.radians(obstacle_distance[0]*(0.5))
-                radians = math.radians(180) - self.actual_angle_difference - self.vehicle_local_position.heading - math.radians(obstacle_distance[0]*(0.5))
+                radians = math.radians(180) - self.actual_angle_difference - self.vehicle_local_position.heading - math.radians(obstacle_distance[0]*(self.lidar_angle_resolution_in_degree))
                 # if 45 + 90 - self.yaw_angle_degree + (-1*obstacle_distance[0]*(0.72)) < 0 :
                 #     radians = math.radians(360 + 45 + 90 - self.yaw_angle_degree + (-1*(obstacle_distance[0]*(0.72))))
                 # else :
