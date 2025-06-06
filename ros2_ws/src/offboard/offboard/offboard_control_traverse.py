@@ -611,18 +611,27 @@ class OffboardControl(Node):
         msg = msg.ranges.tolist()
         if self.lidar_direction_reverse :
             msg = msg[::-1]
-        obstacle_distances_front = msg[-50:]+msg[:50] #msg[40:140] #msg[25:100] #msg[5:13]
-        obstacle_distances_right = msg[130:230] #msg[220:320] #msg[150:225] #msg[23:31] 
-        obstacle_distances_back = msg[310:410] #msg[275:350] #msg[41:49]
-        obstacle_distances_left = msg[490:590] #msg[400:475] #msg[59:67] 
 
-        right_up_corner_distances = msg[70:110] #msg[-20:]+msg[:20] #msg[-20:]+msg[:20] #msg[-2:]+msg[2:]
-        right_down_corner_distances = msg[250:290] #msg[160:200] #msg[105:145] #msg[16:20]
-        left_down_corner_distances = msg[430:470] #msg[340:380] #msg[230:270] #msg[34:38]
-        left_up_corner_distances = msg[610:650] #msg[520:560] #msg[355:395] #msg[52:56]
+        ## Degree range - (-25:) and (:25)
+        obstacle_distances_front = msg[-1*(int(25/self.lidar_angle_resolution_in_degree)):]+msg[:int(25/self.lidar_angle_resolution_in_degree)] #msg[-50:]+msg[:50] #msg[40:140] #msg[25:100] #msg[5:13]
+        ## Degree range - ( 25+40 : 25+40+50 )
+        obstacle_distances_right = msg[int(65/self.lidar_angle_resolution_in_degree):int(115/self.lidar_angle_resolution_in_degree)] #msg[130:230] #msg[220:320] #msg[150:225] #msg[23:31]
+        ## Degree range - ( 25+40+50+40 : 25+40+50+40+50 )
+        obstacle_distances_back = msg[int(155/self.lidar_angle_resolution_in_degree):int(205/self.lidar_angle_resolution_in_degree)] #msg[310:410] #msg[275:350] #msg[41:49]
+        ## Degree range - ( 25+40+50+40+50+40 : 25+40+50+40+50+40+50 )
+        obstacle_distances_left = msg[int(245/self.lidar_angle_resolution_in_degree):int(295/self.lidar_angle_resolution_in_degree)] #msg[490:590] #msg[400:475] #msg[59:67] 
 
-        front_left_distance = msg[-50:] #msg[40:90] #msg[25:50] #msg[5:9]
-        front_right_distance = msg[:50] #msg[90:140] #msg[50:100] #msg[9:13]
+        ## Degree range - ( 25+10 : 25+10+20 )
+        right_up_corner_distances = msg[int(35/self.lidar_angle_resolution_in_degree):int(55/self.lidar_angle_resolution_in_degree)] #msg[70:110] #msg[-20:]+msg[:20] #msg[-20:]+msg[:20] #msg[-2:]+msg[2:]
+        ## Degree range - ( 25+10+20+50+20 : 25+10+20+50+20+20 )
+        right_down_corner_distances = msg[int(125/self.lidar_angle_resolution_in_degree):int(145/self.lidar_angle_resolution_in_degree)] #msg[250:290] #msg[160:200] #msg[105:145] #msg[16:20]
+        ## Degree range - ( 25+10+20+50+20+20+50+20 : 25+10+20+50+20+20+50+20+20 )
+        left_down_corner_distances = msg[int(215/self.lidar_angle_resolution_in_degree):int(235/self.lidar_angle_resolution_in_degree)] #msg[430:470] #msg[340:380] #msg[230:270] #msg[34:38]
+        ## Degree range - ( 25+10+20+50+20+20+50+20+20+50+20 : 25+10+20+50+20+20+50+20+20+50+20+20 )
+        left_up_corner_distances = msg[int(305/self.lidar_angle_resolution_in_degree):int(325/self.lidar_angle_resolution_in_degree)] #msg[610:650] #msg[520:560] #msg[355:395] #msg[52:56]
+
+        front_left_distance = msg[-1*(int(25/self.lidar_angle_resolution_in_degree)):] #msg[-50:] #msg[40:90] #msg[25:50] #msg[5:9]
+        front_right_distance = msg[:int(25/self.lidar_angle_resolution_in_degree)] #msg[:50] #msg[90:140] #msg[50:100] #msg[9:13]
 
         # obstacle_distances_centre = msg[61:65]
         back_obstacle_found = len([*filter(lambda x: x < threshold, obstacle_distances_back)])
