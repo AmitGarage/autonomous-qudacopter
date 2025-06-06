@@ -1,0 +1,3 @@
+coordinates_publisher:
+  ros__parameters:
+    traverse_coordinates_file_path: "/home/amit-singh/Downloads/qudacopter/autonomous-qudacopter/start_time_offboard_control.json"
