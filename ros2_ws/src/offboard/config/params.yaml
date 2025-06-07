@@ -11,3 +11,4 @@ offboard_control:
     lidar_topic_name: "/scan"
     lidar_rotation_anticlockwise_direction: True
     lidar_angle_resolution_in_degree: 0.5
+    only_takeoff_and_land: True

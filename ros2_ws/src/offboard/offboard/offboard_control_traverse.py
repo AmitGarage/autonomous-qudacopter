@@ -28,6 +28,7 @@ class OffboardControl(Node):
         self.declare_parameter('static_log_file_name', '')
         self.declare_parameter('lidar_rotation_anticlockwise_direction',False)
         self.declare_parameter('lidar_angle_resolution_in_degree',0.5)
+        self.declare_parameter('only_takeoff_and_land',False)
         # self.declare_parameter('baud_rate', 921600)
         # self.declare_parameter('udp_port', 8888)
 
@@ -118,6 +119,8 @@ class OffboardControl(Node):
         self.lidar_direction_reverse = self.get_parameter('lidar_rotation_anticlockwise_direction').get_parameter_value().bool_value
         self.lidar_angle_resolution_in_degree = self.get_parameter('lidar_angle_resolution_in_degree').get_parameter_value().double_value
 
+        self.only_takeoff_and_land = self.get_parameter('only_takeoff_and_land').get_parameter_value().bool_value
+
         self.x_data = []
         self.y_data = []
         # self.z_data = []
@@ -162,7 +165,7 @@ class OffboardControl(Node):
         if self.lidar_direction_reverse :
             lidar_msg = lidar_msg[::-1]
 
-        if self.z_achieved and ( ( not self.x_achieved and self.x_rotate_achieved ) or ( not self.y_achieved and self.y_rotate_achieved ) ):
+        if self.z_achieved and ( ( not self.x_achieved and self.x_rotate_achieved ) or ( not self.y_achieved and self.y_rotate_achieved ) or (self.only_takeoff_and_land)):
             obstacle_distances = [(distance_idx,lidar_msg[distance_idx]) for distance_idx in range(len(lidar_msg)) if lidar_msg[distance_idx] < np.inf]
 
             # self.get_logger().info(f'obstacle_distances - {obstacle_distances}')
@@ -821,6 +824,10 @@ class OffboardControl(Node):
                     self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
                     # time.sleep(30)
 
+            elif self.vehicle_status.nav_state == VehicleStatus.NAVIGATION_STATE_OFFBOARD and self.square_check == 1 and self.only_takeoff_and_land :
+                self.land()
+                convert( self.log_file_name )
+                exit(0)
             elif self.vehicle_status.nav_state == VehicleStatus.NAVIGATION_STATE_OFFBOARD and self.square_check == 1:
 
                 if ( not self.x_achieved ) and ( not self.x_rotate_achieved ) and ( round(self.vehicle_local_position.heading,2) < round(self.yaw_angle,2)-0.005 or round(self.vehicle_local_position.heading,2) > round(self.yaw_angle,2)+0.005 ):
