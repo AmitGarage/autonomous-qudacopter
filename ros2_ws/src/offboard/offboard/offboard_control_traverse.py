@@ -15,6 +15,7 @@ import json
 import logging
 from utils.convert_log_file import convert
 from custom_msgs.msg import TraverseCoordinates
+import queue
 
 
 class OffboardControl(Node):
@@ -84,16 +85,20 @@ class OffboardControl(Node):
         # Creating lidar sensor subscriber
         self.lidar_2d_subscription = self.create_subscription(
             LaserScan, lidar_topic_name, self.obstacle_distance_callback, 10)
+        # Creating traverse coordinates subscriber
+        self.traverse_coordinates_subscriber = self.create_subscription(
+            TraverseCoordinates, '/traverse_coordinates_topic', self.traverse_coordinates_callback, 10)
 
         # Initialize variables
         self.offboard_setpoint_counter = 0
         self.vehicle_local_position = VehicleLocalPosition()
         self.vehicle_status = VehicleStatus()
-        self.takeoff_height = -5.0
-        self.forward_distance_x = -8.0
+        self.traverse_coordinates_queue = queue.Queue()
+        self.takeoff_height = 0.0
+        self.forward_distance_x = 0.0
         self.forward_obstract_distance = [ "x" , 0.0, 0.0 ]
         self.continue_direction = [0.0,0.0]
-        self.forward_distance_y = 6.5
+        self.forward_distance_y = 0.0
         self.intermittent_distance_x = 0.0
         self.intermittent_distance_y = 0.0
         self.vehicle_step_distance = 0.0
@@ -131,6 +136,24 @@ class OffboardControl(Node):
 
         # Create a timer to publish control commands
         self.timer = self.create_timer(0.1, self.timer_callback)
+
+    def traverse_coordinates_callback(self, traverse_coordinates_msg):
+        # self.traverse_coordinates_queue
+        self.get_logger().info(f"traverse_coordinates_msg - {traverse_coordinates_msg}")
+        for row_no in range(traverse_coordinates_msg.rows) :
+            self.traverse_coordinates_queue.put(traverse_coordinates_msg.data[(row_no*traverse_coordinates_msg.cols):((row_no*traverse_coordinates_msg.cols)+traverse_coordinates_msg.cols)])
+        self.reset_file(traverse_coordinates_msg.file_name)
+
+    def reset_file(self, json_file_name):
+        """Overwrites the file with an empty matrix."""
+        try:
+            # Write an empty matrix (0x0)
+            with open(json_file_name, 'w') as f:
+                json.dump([], f)
+
+            self.get_logger().info("Matrix file reset to 0x0")
+        except Exception as e:
+            self.get_logger().error(f"Failed to reset file: {e}")
 
     def vehicle_local_position_callback(self, vehicle_local_position):
         """Callback function for vehicle_local_position topic subscriber."""
@@ -758,8 +781,15 @@ class OffboardControl(Node):
             self.engage_offboard_mode()
             self.arm()
             self.offboard_setpoint_counter += 1
-        
+            if not self.traverse_coordinates_queue.empty() :
+                self.forward_distance_x, self.forward_distance_y, self.takeoff_height = self.traverse_coordinates_queue.get()
+                self.get_logger().info(f"Position has been set to traverse - {self.forward_distance_x} - {self.forward_distance_y} - {self.takeoff_height}")
         if not self.obstacle_found :
+            if self.traverse_coordinates_queue.empty() and self.forward_distance_x == 0.0 and self.forward_distance_y == 0.0 and self.takeoff_height == 0.0:
+                self.get_logger().info(f"No postions found to traverse")
+                self.land()
+                convert( self.log_file_name )
+                exit(0)
             if self.vehicle_status.nav_state == VehicleStatus.NAVIGATION_STATE_OFFBOARD and self.square_check == 0:
                 if ( not self.z_achieved ) and round(self.vehicle_local_position.z,0) != self.takeoff_height :
                     self.publish_position_setpoint("position", 0.0, 0.0, self.takeoff_height,self.yaw_angle)
@@ -951,6 +981,11 @@ class OffboardControl(Node):
                         self.y_achieved = False
                         self.y_rotate_achieved = False
                         self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
+                    elif not self.traverse_coordinates_queue.empty() :
+                        self.y_achieved = False
+                        self.y_rotate_achieved = False
+                        self.forward_distance_x, self.forward_distance_y, self.takeoff_height = self.traverse_coordinates_queue.get()
+                        self.get_logger().info(f"New Position has been set to traverse - {self.forward_distance_x} - {self.forward_distance_y} - {self.takeoff_height}")
                     else :
                         self.land()
                         convert( self.log_file_name )
@@ -1074,6 +1109,11 @@ class OffboardControl(Node):
                         self.x_achieved = False
                         self.x_rotate_achieved = False
                         self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
+                    elif not self.traverse_coordinates_queue.empty() :
+                        self.x_achieved = False
+                        self.x_rotate_achieved = False
+                        self.forward_distance_x, self.forward_distance_y, self.takeoff_height = self.traverse_coordinates_queue.get()
+                        self.get_logger().info(f"New Position has been set to traverse - {self.forward_distance_x} - {self.forward_distance_y} - {self.takeoff_height}")
                     else :
                         self.land()
                         convert( self.log_file_name )
@@ -1139,6 +1179,11 @@ class OffboardControl(Node):
                     self.y_rotate_achieved = False
                     self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
                     return True
+                elif not self.traverse_coordinates_queue.empty() :
+                    self.y_achieved = False
+                    self.y_rotate_achieved = False
+                    self.forward_distance_x, self.forward_distance_y, self.takeoff_height = self.traverse_coordinates_queue.get()
+                    self.get_logger().info(f"New Position has been set to traverse - {self.forward_distance_x} - {self.forward_distance_y} - {self.takeoff_height}")
                 else :
                     self.land()
                     convert( self.log_file_name )
@@ -1198,6 +1243,11 @@ class OffboardControl(Node):
                     self.x_rotate_achieved = False
                     self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
                     return True
+                elif not self.traverse_coordinates_queue.empty() :
+                    self.x_achieved = False
+                    self.x_rotate_achieved = False
+                    self.forward_distance_x, self.forward_distance_y, self.takeoff_height = self.traverse_coordinates_queue.get()
+                    self.get_logger().info(f"New Position has been set to traverse - {self.forward_distance_x} - {self.forward_distance_y} - {self.takeoff_height}")
                 else :
                     self.land()
                     convert( self.log_file_name )

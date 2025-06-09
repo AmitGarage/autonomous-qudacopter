@@ -18,10 +18,10 @@ class CoordinatesPublisher(Node):
         self.traverse_coordinates_file_path = self.get_parameter('traverse_coordinates_file_path').get_parameter_value().string_value
 
         # Create publisher
-        self.publisher_ = self.create_publisher(TraverseCoordinates, 'traverse_coordinates_topic', 10)
+        self.publisher_ = self.create_publisher(TraverseCoordinates, '/traverse_coordinates_topic', 10)
 
         # Publish at a fixed rate
-        self.timer = self.create_timer(1.0, self.check_for_file_update)
+        self.timer = self.create_timer(0.1, self.check_for_file_update)
     
     def is_matrix_empty(self):
         """Checks if the matrix is empty (0×0)."""
@@ -58,12 +58,13 @@ class CoordinatesPublisher(Node):
         msg.data = data
         msg.rows = rows
         msg.cols = cols
+        msg.file_name = self.traverse_coordinates_file_path
 
         self.publisher_.publish(msg)
         self.get_logger().info(f"Published Matrix {msg.rows}x{msg.cols} - Data={msg.data}")
 
         # Reset file content to an empty matrix (0x0)
-        self.reset_file()
+        # self.reset_file()
 
     def reset_file(self):
         """Overwrites the file with an empty matrix."""
