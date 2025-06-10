@@ -250,14 +250,6 @@ class OffboardControl(Node):
             # exit(0)
             # self.axes.scatter(vechile_position_x,vechile_position_y,c="#fd72c0",marker=".",s=5)
 
-    # def update_plot(self):
-    #     self.ax.clear()
-    #     self.ax.scatter(self.x_data, self.y_data,c="#fd72c0",marker=".",s=5)
-    #     # self.ax.set_xlabel("Time/Index")
-    #     # self.ax.set_ylabel("Data Value")
-    #     self.fig.canvas.draw()
-    #     plt.pause(0.001)
-
     def collision_detected(self , distances):
         if any(distance <= 0.3 for distance in distances):
             self.get_logger().info(f'All Obstacle distance: {distances}') 
