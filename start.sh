@@ -21,6 +21,8 @@ echo $MAKEFLAGS
 # colcon build --packages-select offboard traverse_coordinates --symlink-install --parallel-workers 2
 # source install/local_setup.bash
 
+# ros2 launch sllidar_ros2 sllidar_c1_launch.py
+
 # Second ROS 2 Python command
 ros2 launch traverse_coordinates coordinates_publisher.launch.py &
 

@@ -784,7 +784,7 @@ class OffboardControl(Node):
             if not self.traverse_coordinates_queue.empty() :
                 self.forward_distance_x, self.forward_distance_y, self.takeoff_height = self.traverse_coordinates_queue.get()
                 self.get_logger().info(f"Position has been set to traverse - {self.forward_distance_x} - {self.forward_distance_y} - {self.takeoff_height}")
-        if not self.obstacle_found :
+        if not self.obstacle_found and self.offboard_setpoint_counter == 12:
             if self.traverse_coordinates_queue.empty() and self.forward_distance_x == 0.0 and self.forward_distance_y == 0.0 and self.takeoff_height == 0.0:
                 self.get_logger().info(f"No postions found to traverse")
                 self.land()
