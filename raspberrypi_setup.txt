@@ -81,3 +81,12 @@ rpicam commands
 	- rpicam-vid -t 10000 -o test.mp4
 
 ps -ef | grep ros2 | awk '{print $2}' | xargs kill -${2:-'TERM'}
+
+1. Enable Range Finder (EKF2_RNG_CTRL):
+Ensure the range finder is enabled by setting the EKF2_RNG_CTRL parameter to a non-zero value. 
+2. Configure EKF2_HGT_REF:
+Set EKF2_HGT_REF to 2 (Range Finder) if LiDAR is providing range data. 
+3. Calibrate LiDAR (if necessary):
+Ensure the LiDAR is calibrated correctly for accurate altitude measurements. 
+4. Consider other height sources:
+You might also want to enable GPS or barometer for additional height information, especially in cases where LiDAR might lose signal. You can control these using EKF2_GPS_CTRL and EKF2_BARO_CTRL respectively. 
