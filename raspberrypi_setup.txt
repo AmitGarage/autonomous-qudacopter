@@ -98,3 +98,8 @@ You might also want to enable GPS or barometer for additional height information
 	- sudo apt-get install libboost-all-dev
 	- sudo apt-get install libsuitesparse-dev
 	- sudo apt-get install libceres-dev
+
+- tf odom installation
+	- git clone https://github.com/MAPIRlab/rf2o_laser_odometry.git
+	- sudo apt-get install ros-jazzy-tf2-tools ros-jazzy-tf-transformations
+	- View frames - ros2 run tf2_tools view_frames

@@ -18,6 +18,7 @@ export MAKEFLAGS=-j2
 echo $MAKEFLAGS
 
 # colcon build --packages-select custom_msgs --symlink-install --parallel-workers 2
+# colcon build --packages-select rf2o_laser_odometry --symlink-install --parallel-workers 2
 # colcon build --packages-select offboard traverse_coordinates --symlink-install --parallel-workers 2
 # source install/local_setup.bash
 
@@ -27,6 +28,10 @@ echo $MAKEFLAGS
 ros2 launch traverse_coordinates coordinates_publisher.launch.py &
 
 sleep 1
+
+# ros2 launch rf2o_laser_odometry rf2o_laser_odometry.launch.py &
+
+# sleep 2
 
 # First ROS 2 Python command
 ros2 launch offboard offboard_control_traverse.launch.py &
