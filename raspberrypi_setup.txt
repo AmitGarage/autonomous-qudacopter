@@ -104,3 +104,5 @@ You might also want to enable GPS or barometer for additional height information
 	- git clone https://github.com/MAPIRlab/rf2o_laser_odometry.git
 	- sudo apt-get install ros-jazzy-tf2-tools ros-jazzy-tf-transformations
 	- View frames - ros2 run tf2_tools view_frames
+- tf_ros installation for rviz and px4 integration
+	- sudo apt install ros-jazzy-tf2-ros ros-jazzy-tf2-msgs
