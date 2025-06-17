@@ -107,3 +107,4 @@ You might also want to enable GPS or barometer for additional height information
 - tf_ros installation for rviz and px4 integration
 	- sudo apt install ros-jazzy-tf2-ros ros-jazzy-tf2-msgs
 - tf should have mapping
+	- Need to add proper transformation
