@@ -17,13 +17,13 @@ def generate_launch_description():
     #     shell=True
     # )
 
-    micro_ros_agent = Node(
-        package='offboard',
-        executable='microagent_node',
-        parameters=[params_file],
-        output='screen',
-        shell=True
-    )
+    # micro_ros_agent = Node(
+    #     package='offboard',
+    #     executable='microagent_node',
+    #     parameters=[params_file],
+    #     output='screen',
+    #     shell=True
+    # )
 
     offboard_control_node = Node(
         package='offboard',
@@ -55,7 +55,7 @@ def generate_launch_description():
     # )
 
     return LaunchDescription([
-        micro_ros_agent,
+        # micro_ros_agent,
         # included_launch,
         offboard_control_node
     ])

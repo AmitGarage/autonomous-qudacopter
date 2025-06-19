@@ -10,9 +10,9 @@ slam_toolbox:
     ceres_loss_function: None
 
     # ROS Parameters
-    odom_frame: x500_lidar_2d_0/link/lidar_2d_v2
+    odom_frame: odom
     map_frame: map
-    base_frame: x500_lidar_2d_0/link/lidar_2d_v2
+    base_frame: base_footprint
     scan_topic: /scan
     use_map_saver: true
     mode: mapping #localization
