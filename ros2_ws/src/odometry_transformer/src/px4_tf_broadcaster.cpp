@@ -12,6 +12,24 @@ using namespace px4_msgs::msg;
 class PX4ScanTFBroadcaster : public rclcpp::Node {
 public:
     PX4ScanTFBroadcaster() : Node("px4_scan_tf_broadcaster") {
+
+        declare_parameter<std::string>("base_frame_id", "base_footprint");
+        base_frame_id_ = get_parameter("base_frame_id").as_string();
+        declare_parameter<std::string>("scan_child_frame_id", "laser");
+        scan_child_frame_id_ = get_parameter("scan_child_frame_id").as_string();
+        declare_parameter<std::string>("odom_frame_id", "odom");
+        odom_frame_id_ = get_parameter("odom_frame_id").as_string();
+        declare_parameter<std::string>("scan_subscribe_topic", "/scan");
+        scan_subscribe_topic_ = get_parameter("scan_subscribe_topic").as_string();
+        declare_parameter<std::string>("scan_publish_topic", "/scan_modified");
+        scan_publish_topic_ = get_parameter("scan_publish_topic").as_string();
+        declare_parameter<std::string>("odom_subscribe_topic", "/fmu/out/vehicle_odometry");
+        odom_subscribe_topic_ = get_parameter("odom_subscribe_topic").as_string();
+        declare_parameter<std::string>("odom_publish_topic", "/odom");
+        odom_publish_topic_ = get_parameter("odom_publish_topic").as_string();
+
+        // RCLCPP_INFO(this->get_logger(), "scan_frame_id_ = %s", scan_frame_id_.c_str());
+
         rclcpp::QoS qos_profile(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default));
         qos_profile.reliability(rclcpp::ReliabilityPolicy::BestEffort);
 
@@ -24,16 +42,16 @@ public:
         
         // Subscriber to LaserScan topic
         subscription_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
-            "/scan", qos_profile,
+            scan_subscribe_topic_, qos_profile,
             std::bind(&PX4ScanTFBroadcaster::callback_scan, this, std::placeholders::_1));
 
         // Publisher for modified scan data (same topic as original)
-        scan_publisher_ = this->create_publisher<sensor_msgs::msg::LaserScan>("/scan", 10);
+        scan_publisher_ = this->create_publisher<sensor_msgs::msg::LaserScan>(scan_publish_topic_, 10);
 
-        odom_publisher_ = this->create_publisher<nav_msgs::msg::Odometry>("/odom", 10);
+        odom_publisher_ = this->create_publisher<nav_msgs::msg::Odometry>(odom_publish_topic_, 10);
 
         odom_subscription_ = this->create_subscription<VehicleOdometry>(
-            "/fmu/out/vehicle_odometry", qos_profile,
+            odom_subscribe_topic_, qos_profile,
             std::bind(&PX4ScanTFBroadcaster::odometryCallback, this, std::placeholders::_1)
         );
 
@@ -49,8 +67,8 @@ private:
     void odometryCallback(const VehicleOdometry::SharedPtr msg) {
         nav_msgs::msg::Odometry publish_data;
         publish_data.header.stamp = this->get_clock()->now();
-        publish_data.header.frame_id = "odom";
-        publish_data.child_frame_id = "base_footprint";
+        publish_data.header.frame_id = odom_frame_id_;
+        publish_data.child_frame_id = base_frame_id_;
 
         // Convert quaternion (NED → ENU)
         Eigen::Quaterniond q = px4_ros_com::frame_transforms::utils::quaternion::array_to_eigen_quat(msg->q);
@@ -69,10 +87,10 @@ private:
         publish_data.pose.pose.position.x = enu_position.x();
         publish_data.pose.pose.position.y = enu_position.y();
         publish_data.pose.pose.position.z = enu_position.z();
-        publish_data.pose.pose.orientation.x = msg->q[0];
-        publish_data.pose.pose.orientation.y = msg->q[1];
-        publish_data.pose.pose.orientation.z = msg->q[2];
-        publish_data.pose.pose.orientation.w = msg->q[3];
+        publish_data.pose.pose.orientation.x = enu_base_link_q.x();
+        publish_data.pose.pose.orientation.y = enu_base_link_q.y();
+        publish_data.pose.pose.orientation.z = enu_base_link_q.z();
+        publish_data.pose.pose.orientation.w = enu_base_link_q.w();
         publish_data.twist.twist.linear.x = enu_velocity.x();
         publish_data.twist.twist.linear.y = enu_velocity.y();
         publish_data.twist.twist.linear.z = enu_velocity.z();
@@ -99,8 +117,8 @@ private:
         // Publish transformed odometry
         geometry_msgs::msg::TransformStamped odom_tf;
         odom_tf.header.stamp = this->get_clock()->now();
-        odom_tf.header.frame_id = "odom";
-        odom_tf.child_frame_id = "base_footprint";
+        odom_tf.header.frame_id = odom_frame_id_;
+        odom_tf.child_frame_id = base_frame_id_;
 
         odom_tf.transform.translation.x = publish_data.pose.pose.position.x;
         odom_tf.transform.translation.y = publish_data.pose.pose.position.y;
@@ -144,7 +162,7 @@ private:
 
         modified_scan.header.stamp = this->get_clock()->now();
         // Update the frame_id to match the desired transformation
-        modified_scan.header.frame_id = "x500_lidar_2d_0/link/lidar_2d_v2";  // Mapping scan data to base_link
+        modified_scan.header.frame_id = scan_child_frame_id_;  // Mapping scan data to base_link
 
         // Publish modified scan data back on the same topic
         scan_publisher_->publish(modified_scan);
@@ -154,8 +172,8 @@ private:
         geometry_msgs::msg::TransformStamped transform;
 
         transform.header.stamp = this->get_clock()->now();
-        transform.header.frame_id = "base_footprint";
-        transform.child_frame_id = "x500_lidar_2d_0/link/lidar_2d_v2";
+        transform.header.frame_id = base_frame_id_;
+        transform.child_frame_id = scan_child_frame_id_;
 
         // Adjust position for Slamtech C1 LiDAR on quadcopter
         transform.transform.translation.x = 0.2;  // Modify based on actual mounting
@@ -217,6 +235,14 @@ private:
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_publisher_;
     rclcpp::Subscription<VehicleOdometry>::SharedPtr odom_subscription_;
     std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+    std::string base_frame_id_;
+    std::string scan_child_frame_id_;
+    std::string odom_frame_id_;
+    std::string scan_subscribe_topic_;
+    std::string scan_publish_topic_;
+    std::string odom_subscribe_topic_;
+    std::string odom_publish_topic_;
+
     // rclcpp::TimerBase::SharedPtr timer_;
 };
 

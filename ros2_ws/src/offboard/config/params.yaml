@@ -1,14 +1,14 @@
 microagent:
   ros__parameters:
-    mode: "udp"  # Change to "udp" or "serial" if needed
-    serial_device: "/dev/ttyAMA0"
+    mode: udp
+    serial_device: /dev/ttyAMA0
     baud_rate: 921600
     udp_port: 8888
-
 offboard_control:
   ros__parameters:
-    static_log_file_name: "/home/amit-singh/Downloads/qudacopter/start_time_offboard_control.log"
-    lidar_topic_name: "/scan"
-    lidar_rotation_anticlockwise_direction: True
+    static_log_file_name: /home/amit-singh/Downloads/qudacopter/autonomous-qudacopter/log/start_time_offboard_control.log
+    lidar_processed_file_name: /home/amit-singh/Downloads/qudacopter/autonomous-qudacopter/log/map_data.json
+    lidar_topic_name: /scan_modified
+    lidar_rotation_anticlockwise_direction: true
     lidar_angle_resolution_in_degree: 0.5
-    only_takeoff_and_land: False
+    only_takeoff_and_land: false

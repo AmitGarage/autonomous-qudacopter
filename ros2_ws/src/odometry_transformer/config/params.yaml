@@ -1,0 +1,9 @@
+px4_scan_tf_broadcaster:
+  ros__parameters:
+    base_frame_id: base_footprint
+    scan_child_frame_id: x500_lidar_2d_0/link/lidar_2d_v2
+    scan_subscribe_topic: /scan
+    scan_publish_topic: /scan_modified
+    odom_frame_id: odom
+    odom_subscribe_topic: /fmu/out/vehicle_odometry
+    odom_publish_topic: /odom

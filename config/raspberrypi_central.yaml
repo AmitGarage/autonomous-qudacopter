@@ -1,0 +1,33 @@
+odometry_transformer:
+    px4_scan_tf_broadcaster:
+        base_frame_id: "base_footprint"
+        scan_child_frame_id: "laser"
+        scan_subscribe_topic: "/scan"
+        scan_publish_topic: "/scan_modified"
+        odom_frame_id: "odom"
+        odom_subscribe_topic: "/fmu/out/vehicle_odometry"
+        odom_publish_topic: "/odom"
+offboard:
+    microagent:
+        mode: "serial"  # Change to "udp" or "serial" if needed
+        serial_device: "/dev/ttyAMA0"
+        baud_rate: 921600
+        udp_port: 8888
+    offboard_control:
+        static_log_file_name: "/home/amitsingh/autonomous-qudacopter/log/start_time_offboard_control.log"
+        lidar_processed_file_name: /home/amitsingh/autonomous-qudacopter/log/map_data.json
+        lidar_topic_name: "/scan_modified"
+        lidar_rotation_anticlockwise_direction: True
+        lidar_angle_resolution_in_degree: 0.5
+        only_takeoff_and_land: False
+traverse_coordinates:
+    coordinates_publisher:
+        traverse_coordinates_file_path: "/home/amitsingh/autonomous-qudacopter/start_time_offboard_control.json"
+slam_toolbox:
+    slam_toolbox:
+        odom_frame: odom
+        map_frame: map
+        base_frame: base_footprint
+        scan_topic: /scan_modified
+        use_map_saver: true
+        mode: mapping

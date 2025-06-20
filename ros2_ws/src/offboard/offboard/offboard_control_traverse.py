@@ -16,6 +16,7 @@ import logging
 from utils.convert_log_file import convert
 from custom_msgs.msg import TraverseCoordinates
 import queue
+import os
 
 
 class OffboardControl(Node):
@@ -30,12 +31,14 @@ class OffboardControl(Node):
         self.declare_parameter('lidar_rotation_anticlockwise_direction',False)
         self.declare_parameter('lidar_angle_resolution_in_degree',0.5)
         self.declare_parameter('only_takeoff_and_land',False)
+        self.declare_parameter('lidar_processed_file_name','')
         # self.declare_parameter('baud_rate', 921600)
         # self.declare_parameter('udp_port', 8888)
 
         # Get parameters
         lidar_topic_name = self.get_parameter('lidar_topic_name').get_parameter_value().string_value
         self.log_file_name = self.get_parameter('static_log_file_name').get_parameter_value().string_value
+        self.lidar_processed_file_name = self.get_parameter('lidar_processed_file_name').get_parameter_value().string_value
         current_time = datetime.datetime.now()
         self.log_file_name = self.log_file_name.replace('start_time',str(current_time.year).zfill(4)+str(current_time.month).zfill(2)+str(current_time.day).zfill(2)+str(current_time.hour).zfill(2)+str(current_time.minute).zfill(2)+str(current_time.second).zfill(2))
         self.get_logger().info(f"log_file_name - {self.log_file_name}")
@@ -240,8 +243,9 @@ class OffboardControl(Node):
                 # "drone_z" : self.drone_z_data
             }
 
-            shutil.copy("/home/amit-singh/Downloads/qudacopter/tmp_map_data.json", "/home/amit-singh/Downloads/qudacopter/map_data.json")
-            with open("/home/amit-singh/Downloads/qudacopter/tmp_map_data.json", "w") as outfile:
+            if os.path.isfile(self.lidar_processed_file_name.replace(".json","_tmp.json")) :
+                shutil.copy(self.lidar_processed_file_name.replace(".json","_tmp.json"), self.lidar_processed_file_name)
+            with open(self.lidar_processed_file_name.replace(".json","_tmp.json"), "w") as outfile:
                 json.dump(map_data, outfile,indent=4)
             # if not self.y_achieved and self.y_rotate_achieved :
             #     self.land()
