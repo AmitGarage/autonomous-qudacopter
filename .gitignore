@@ -9,6 +9,7 @@ ros2_ws/log/
 
 # log files
 **/*.log
+log/*
 
 # Ignore pycache folders
 **/__pycache__/
