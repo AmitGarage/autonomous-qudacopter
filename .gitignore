@@ -4,7 +4,11 @@ ros2_ws/build/
 ros2_ws/install/
 ros2_ws/log/
 
+# Ignore vscode config files
 .vscode
+
+# log files
+**/*.log
 
 # Ignore pycache folders
 **/__pycache__/
