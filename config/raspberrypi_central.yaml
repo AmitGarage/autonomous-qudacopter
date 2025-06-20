@@ -22,7 +22,7 @@ offboard:
         only_takeoff_and_land: False
 traverse_coordinates:
     coordinates_publisher:
-        traverse_coordinates_file_path: "/home/amitsingh/autonomous-qudacopter/start_time_offboard_control.json"
+        traverse_coordinates_file_path: "/home/amitsingh/autonomous-qudacopter/config/start_time_offboard_control.json"
 slam_toolbox:
     slam_toolbox:
         odom_frame: odom

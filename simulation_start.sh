@@ -13,7 +13,7 @@ cd /home/amit-singh/Downloads/qudacopter/autonomous-qudacopter
 
 
 # JSON file path
-JSON_FILE="start_time_offboard_control.json"
+JSON_FILE="config/start_time_offboard_control.json"
 
 # Check if file exists, else create it with an empty JSON object
 if [ ! -f "$JSON_FILE" ]; then
