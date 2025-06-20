@@ -18,7 +18,7 @@ class MicroAgentNode(Node):
         if mode == "serial":
             serial_device = self.get_parameter('serial_device').get_parameter_value().string_value
             baud_rate = self.get_parameter('baud_rate').get_parameter_value().integer_value
-            command = f"MicroXRCEAgent serial --dev {serial_device} -b {baud_rate}"
+            command = f"sudo MicroXRCEAgent serial --dev {serial_device} -b {baud_rate}"
         elif mode == "udp":
             udp_port = self.get_parameter('udp_port').get_parameter_value().integer_value
             command = f"MicroXRCEAgent udp4 -p {udp_port} -v"
