@@ -1,5 +1,6 @@
 #include <rclcpp/rclcpp.hpp>
 #include <px4_msgs/msg/vehicle_local_position.hpp>
+#include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
 #include <sensor_msgs/msg/laser_scan.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <tf2_ros/transform_broadcaster.h>
@@ -27,6 +28,10 @@ public:
         odom_subscribe_topic_ = get_parameter("odom_subscribe_topic").as_string();
         declare_parameter<std::string>("odom_publish_topic", "/odom");
         odom_publish_topic_ = get_parameter("odom_publish_topic").as_string();
+        declare_parameter<std::string>("pose_subscribe_topic", "/pose");
+        pose_subscribe_topic_ = get_parameter("pose_subscribe_topic").as_string();
+        declare_parameter<std::string>("external_odom_publish_topic", "/fmu/in/vehicle_visual_odometry");
+        external_odom_publish_topic_ = get_parameter("external_odom_publish_topic").as_string();
 
         // RCLCPP_INFO(this->get_logger(), "scan_frame_id_ = %s", scan_frame_id_.c_str());
 
@@ -54,6 +59,13 @@ public:
             odom_subscribe_topic_, qos_profile,
             std::bind(&PX4ScanTFBroadcaster::odometryCallback, this, std::placeholders::_1)
         );
+
+        external_odom_publisher_ = this->create_publisher<px4_msgs::msg::VehicleOdometry>(
+            external_odom_publish_topic_, 10);
+
+        pose_subscription_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+            pose_subscribe_topic_, 10,
+            std::bind(&PX4ScanTFBroadcaster::posecallback, this, std::placeholders::_1));
 
         // timer_ = this->create_wall_timer(
         //     std::chrono::milliseconds(100), std::bind(&PX4ScanTFBroadcaster::publish_tf, this)
@@ -189,6 +201,55 @@ private:
         tf_broadcaster_->sendTransform(transform);
     }
 
+    void posecallback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
+        px4_msgs::msg::VehicleOdometry vo_msg;
+
+        vo_msg.timestamp = this->get_clock()->now().nanoseconds() / 1000;
+
+        // Convert pose from ENU to NED
+        Eigen::Vector3d enu_pos(
+        msg->pose.pose.position.x,
+        msg->pose.pose.position.y,
+        msg->pose.pose.position.z);
+
+        vo_msg.pose_frame = px4_msgs::msg::VehicleOdometry::POSE_FRAME_NED;
+
+        Eigen::Vector3d ned_pos = px4_ros_com::frame_transforms::enu_to_ned_local_frame(enu_pos);
+        vo_msg.position[0] = ned_pos.x();
+        vo_msg.position[1] = ned_pos.y();
+        vo_msg.position[2] = ned_pos.z();
+
+        // Orientation
+        Eigen::Quaterniond q_enu(
+        msg->pose.pose.orientation.w,
+        msg->pose.pose.orientation.x,
+        msg->pose.pose.orientation.y,
+        msg->pose.pose.orientation.z);
+
+        auto q_ned = px4_ros_com::frame_transforms::enu_to_ned_orientation(q_enu);
+        vo_msg.q[0] = q_ned.x();
+        vo_msg.q[1] = q_ned.y();
+        vo_msg.q[2] = q_ned.z();
+        vo_msg.q[3] = q_ned.w();
+
+        // Optional: set pose covariance (first 21 elements)
+        // for (int i = 0; i < 21; ++i)
+        // vo_msg.pose_covariance[i] = static_cast<float>(msg->pose.covariance[i]);
+        vo_msg.position_variance[0] = msg->pose.covariance[0];   // x
+        vo_msg.position_variance[1] = msg->pose.covariance[7];   // y
+        vo_msg.position_variance[2] = msg->pose.covariance[14];  // z
+
+        vo_msg.orientation_variance[0] = msg->pose.covariance[21]; // roll
+        vo_msg.orientation_variance[1] = msg->pose.covariance[28]; // pitch
+        vo_msg.orientation_variance[2] = msg->pose.covariance[35]; // yaw
+
+
+        // You can set velocity, angular_velocity, or reset them to 0
+        vo_msg.velocity_frame = px4_msgs::msg::VehicleOdometry::VELOCITY_FRAME_NED;
+
+
+        external_odom_publisher_->publish(vo_msg);
+    }
     // void publish_tf() {
     //     geometry_msgs::msg::TransformStamped transform;
 
@@ -234,6 +295,8 @@ private:
     rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr scan_publisher_;
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_publisher_;
     rclcpp::Subscription<VehicleOdometry>::SharedPtr odom_subscription_;
+    rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_subscription_;
+    rclcpp::Publisher<px4_msgs::msg::VehicleOdometry>::SharedPtr external_odom_publisher_;
     std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
     std::string base_frame_id_;
     std::string scan_child_frame_id_;
@@ -242,6 +305,8 @@ private:
     std::string scan_publish_topic_;
     std::string odom_subscribe_topic_;
     std::string odom_publish_topic_;
+    std::string pose_subscribe_topic_;
+    std::string external_odom_publish_topic_;
 
     // rclcpp::TimerBase::SharedPtr timer_;
 };

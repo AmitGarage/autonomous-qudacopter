@@ -7,3 +7,5 @@ px4_scan_tf_broadcaster:
     odom_frame_id: odom
     odom_subscribe_topic: /fmu/out/vehicle_odometry
     odom_publish_topic: /odom
+    pose_subscribe_topic: /pose
+    external_odom_publish_topic: /fmu/in/vehicle_visual_odometry

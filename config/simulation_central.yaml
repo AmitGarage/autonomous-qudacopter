@@ -7,6 +7,8 @@ odometry_transformer:
         odom_frame_id: "odom"
         odom_subscribe_topic: "/fmu/out/vehicle_odometry"
         odom_publish_topic: "/odom"
+        pose_subscribe_topic: /pose
+        external_odom_publish_topic: /fmu/in/vehicle_visual_odometry
 offboard:
     microagent:
         mode: "udp"  # Change to "udp" or "serial" if needed
