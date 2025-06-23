@@ -110,3 +110,4 @@ You might also want to enable GPS or barometer for additional height information
 	- Need to add proper transformation
 	- Using link ( https://discuss.px4.io/t/how-to-convert-uorb-topic-vehicle-odometry-into-nav-msgs-msg-odometry/29801/8 ) to convert
 - Need to generate lidar odometry
+	- using rf2o_laser_odometry
