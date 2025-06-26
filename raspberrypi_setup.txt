@@ -113,3 +113,4 @@ You might also want to enable GPS or barometer for additional height information
 	- using rf2o_laser_odometry
 - SYS_HAS_MAG = 0 for compass 0 error
 - sudo apt install ros-jazzy-tf2-geometry-msgs
+- Adding code to se tf topic for position and q
