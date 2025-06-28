@@ -114,4 +114,4 @@ You might also want to enable GPS or barometer for additional height information
 - SYS_HAS_MAG = 0 for compass 0 error
 - sudo apt install ros-jazzy-tf2-geometry-msgs
 - Adding code to se tf topic for position and q
-- Not able to get correct orientation and position
+- Not able to get correct orientation and position along with height
