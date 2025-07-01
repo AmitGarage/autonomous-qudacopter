@@ -117,3 +117,4 @@ You might also want to enable GPS or barometer for additional height information
 - Not able to get correct orientation and position along with height
 - EKF2_EV_CTRL = 9 ( Horizontal Position and Yaw )
 - Difrting from the setpint provided and rotation is also not what expected
+- Need to check more
