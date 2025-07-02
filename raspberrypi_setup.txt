@@ -118,3 +118,4 @@ You might also want to enable GPS or barometer for additional height information
 - EKF2_EV_CTRL = 9 ( Horizontal Position and Yaw )
 - Difrting from the setpint provided and rotation is also not what expected
 - Need to check more
+- Working with pose topic to get stable flight navigation
