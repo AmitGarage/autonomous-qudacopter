@@ -120,3 +120,4 @@ You might also want to enable GPS or barometer for additional height information
 - Need to check more
 - Working with pose topic to get stable flight navigation
 - Removed aircraft conversion
+- Added back
