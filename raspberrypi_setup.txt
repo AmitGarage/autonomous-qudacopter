@@ -122,3 +122,4 @@ You might also want to enable GPS or barometer for additional height information
 - Removed aircraft conversion
 - Added back
 - Trying other combinations for orientation.
+- Not able to figure out orientation
