@@ -1,4 +1,4 @@
-For parallel processing
+For parallel processing with 2 core
 export MAKEFLAGS=-j2
 echo $MAKEFLAGS
 
