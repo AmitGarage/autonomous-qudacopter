@@ -126,3 +126,4 @@ You might also want to enable GPS or barometer for additional height information
 - Using only yaw
 - Only orientation y may work after some tunning
 - Testing more for orientation
+- Orientation still needs tuning 
