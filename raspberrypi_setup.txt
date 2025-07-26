@@ -126,4 +126,5 @@ You might also want to enable GPS or barometer for additional height information
 - Using only yaw
 - Only orientation y may work after some tunning
 - Testing more for orientation
-- Orientation still needs tuning 
+- Orientation still needs tuning
+- https://docs.px4.io/v1.15/en/ros2/px4_ros2_navigation_interface.html#px4-ros-2-navigation-interface
