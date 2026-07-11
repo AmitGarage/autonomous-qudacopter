@@ -4,7 +4,7 @@
 source /opt/ros/jazzy/setup.bash
 
 # Go to required path
-cd /home/amit-singh/autonomous-qudacopter
+cd /home/amitsingh/autonomous-qudacopter
 
 
 # JSON file path

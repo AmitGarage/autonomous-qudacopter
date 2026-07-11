@@ -18,7 +18,6 @@ from custom_msgs.msg import TraverseCoordinates
 import queue
 import os
 
-
 class OffboardControl(Node):
     """Node for controlling a vehicle in offboard mode."""
 
@@ -116,7 +115,8 @@ class OffboardControl(Node):
         self.z_achieved = False
         self.x_achieved = False
         self.y_achieved = True
-        self.yaw_angle = 1.57079
+        self.yaw_angle = 3.14159 #(3.14159/2)
+        self.start_angle = 3.14159 #(3.14159/2)
         self.actual_angle = self.yaw_angle
         self.actual_angle_difference = 0.0
         self.previous_front_obstacle_found = 0.0
@@ -134,11 +134,12 @@ class OffboardControl(Node):
         # self.z_data = []
         self.drone_x_data = []
         self.drone_y_data = []
+        self.armed = False
         # self.drone_z_data = []
         # self.fig, self.ax = plt.subplots()
 
         # Create a timer to publish control commands
-        self.timer = self.create_timer(0.1, self.timer_callback)
+        self.timer = self.create_timer(0.01, self.timer_callback)
 
     def traverse_coordinates_callback(self, traverse_coordinates_msg):
         # self.traverse_coordinates_queue
@@ -768,14 +769,92 @@ class OffboardControl(Node):
         msg.timestamp = int(self.get_clock().now().nanoseconds / 1000)
         self.vehicle_command_publisher.publish(msg)
 
+    def adjust_position(self, current, desired):
+        """
+        Adjusts current_x toward desired_x.
+        - Moves by 1 unit if the difference is greater than 1.
+        - Moves by 0.25 units if the difference is less than or equal to 1.
+        """
+        difference = desired - current
+
+        if abs(difference) > 1:
+            step = 1 if difference > 0 else -1
+        elif abs(difference) > 0.2:  # Handles small non-zero differences
+            step = difference*2
+        elif abs(difference) > 0:  # Handles small non-zero differences
+            step = difference
+        else:
+            step = 0  # Already at desired position
+
+        new = current + step
+        return new
+    
+    def wrap_angle(self, angle):
+        """
+        Wraps an angle to the range [-π, π]
+        """
+        while angle <= -math.pi:
+            angle += 2 * math.pi
+        while angle > math.pi:
+            angle -= 2 * math.pi
+        return angle
+
+    def adjust_angle(self, current_angle, desired_angle):
+        """
+        Adjusts current_angle toward desired_angle.
+        - Moves by 0.5 radian if difference > 1
+        - Moves by 0.1 radian if difference <= 1
+        Keeps angle within [-π, π]
+        """
+        # Wrap both angles to [-π, π]
+        current_angle = self.wrap_angle(current_angle)
+        desired_angle = self.wrap_angle(desired_angle)
+
+        # Compute shortest angular difference
+        diff = self.wrap_angle(desired_angle - current_angle)
+
+        if abs(diff) >= 0.05:
+            step = 0.05 if diff > 0 else -0.05
+        elif abs(diff) > 0:
+            step = 0.01 if diff > 0 else -0.01
+        else:
+            step = 0  # Already aligned
+
+        new_angle = self.wrap_angle(current_angle + step)
+        return new_angle
+
+    def wrap_to_2pi(self, angle_rad: float) -> float:
+        """
+        Convert an angle from [-π, π] range to [0, 2π] range.
+        """
+        # Normalize to [-π, π]
+        angle_rad = (angle_rad + math.pi) % (2 * math.pi) - math.pi
+        # Convert to [0, 2π]
+        return angle_rad % (2 * math.pi)
+
+
+    def wrap_to_pi(self, angle_rad: float) -> float:
+        """
+        Convert an angle from [0, 2π] range to [-π, π] range.
+        """
+        # Normalize to [0, 2π]
+        angle_rad = angle_rad % (2 * math.pi)
+        # Convert to [-π, π]
+        if angle_rad > math.pi:
+            angle_rad -= 2 * math.pi
+        return angle_rad
+
     def timer_callback(self) -> None:
         """Callback function for the timer."""
         self.publish_offboard_control_heartbeat_signal("position")
-        # self.get_logger().info(f"self.obstacle_distance - {self.obstacle_distance}")
+        self.get_logger().info(f"started - ")
 
         if self.offboard_setpoint_counter == 11:
             self.engage_offboard_mode()
             self.arm()
+            # if self.vehicle_status.arming_state == VehicleStatus.ARMING_STATE_ARMED :
+            #     self.armed = True
+            # if self.armed :
             self.offboard_setpoint_counter += 1
             if not self.traverse_coordinates_queue.empty() :
                 self.forward_distance_x, self.forward_distance_y, self.takeoff_height = self.traverse_coordinates_queue.get()
@@ -783,23 +862,64 @@ class OffboardControl(Node):
         if not self.obstacle_found and self.offboard_setpoint_counter == 12:
             if self.traverse_coordinates_queue.empty() and self.forward_distance_x == 0.0 and self.forward_distance_y == 0.0 and self.takeoff_height == 0.0:
                 self.get_logger().info(f"No postions found to traverse")
-                self.land()
-                convert( self.log_file_name )
-                exit(0)
+                # self.land()
+                # convert( self.log_file_name )
+                # exit(0)
             if self.vehicle_status.nav_state == VehicleStatus.NAVIGATION_STATE_OFFBOARD and self.square_check == 0:
-                if ( not self.z_achieved ) and round(self.vehicle_local_position.z,0) != self.takeoff_height :
-                    self.publish_position_setpoint("position", 0.0, 0.0, self.takeoff_height,self.yaw_angle)
-                elif ( not self.z_achieved ) and round(self.vehicle_local_position.z,0) == self.takeoff_height :
-                    self.get_logger().info(f"{self.square_check} square completed - {self.vehicle_local_position.z}")
+                # self.yaw_angle = 0.0
+                if ( not self.z_achieved ) and (( round(self.vehicle_local_position.z,2) <= round(self.takeoff_height,2) - 0.25 ) or ( round(self.vehicle_local_position.z,2) >= round(self.takeoff_height,2) + 0.25 )):
+                    # self.publish_position_setpoint("position", 0.0, 0.0, self.takeoff_height,self.yaw_angle)
+                    
+                    # if round(self.vehicle_local_position.heading,2) == -3.14 :
+                    #     self.vehicle_local_position.heading = 3.14
+                    z_diff = self.takeoff_height - self.vehicle_local_position.z
+
+                    if ( z_diff < -1 ) or ( z_diff > 1 ) :
+                        z_diff = np.sign(z_diff)
+
+                    intermittent_distance_z = self.vehicle_local_position.z + z_diff
+
+                    # yaw_diff = self.yaw_angle - self.vehicle_local_position.heading*np.sign(self.vehicle_local_position.heading)
+
+                    # if ( yaw_diff < -0.2 ) or ( yaw_diff > 0.2 ) :
+                    #     yaw_diff = np.sign(yaw_diff)*0.5
+                    # else:
+                    #     yaw_diff = np.sign(yaw_diff)*0.1
+
+                    # intermittent_yaw = self.vehicle_local_position.heading + yaw_diff*np.sign(self.vehicle_local_position.heading)
+                    intermittent_yaw = self.adjust_angle(self.vehicle_local_position.heading, self.yaw_angle)
+
+                    adjusted_x = self.adjust_position(self.vehicle_local_position.x, 0.00)
+                    adjusted_y = self.adjust_position(self.vehicle_local_position.y, 0.00)
+
+                    self.publish_position_setpoint("position", adjusted_x, adjusted_y, intermittent_distance_z,intermittent_yaw)
+                    self.get_logger().info(f'z Going towards required z - {round(self.vehicle_local_position.heading,2)} - {round(self.yaw_angle,2)} - {round(intermittent_yaw,2)} - {round(adjusted_x,2)} - {round(adjusted_y,2)} - {intermittent_distance_z} - {self.vehicle_local_position.z} - {round(self.vehicle_local_position.x,2)} - {round(self.vehicle_local_position.y,2)}')
+
+                elif ( not self.z_achieved ) and ( round(self.vehicle_local_position.z,2) > round(self.takeoff_height,2) - 0.25 ) and ( round(self.vehicle_local_position.z,2) < round(self.takeoff_height,2) + 0.25 ):
+                    self.get_logger().info(f"{self.square_check} square completed - {self.vehicle_local_position.z} - {round(self.vehicle_local_position.x,2)} - {round(self.vehicle_local_position.y,2)}")
                     # self.publish_offboard_control_heartbeat_signal("rotate")
                     # self.yaw_angle -= 1.57079
                     # self.publish_position_setpoint("rotate", 0.0, 0.0, self.takeoff_height,self.yaw_angle)
                     self.z_achieved = True
-                elif self.z_achieved and round(self.vehicle_local_position.heading,2) != round(self.yaw_angle,2):
-                    self.get_logger().info(f"rotating - {self.vehicle_local_position.heading} - {self.vehicle_local_position.x} - {self.vehicle_local_position.y} - {self.vehicle_local_position.z}")
+                elif self.z_achieved and ( round(self.vehicle_local_position.heading,2) < round(self.yaw_angle,2)-0.04 or round(self.vehicle_local_position.heading,2) > round(self.yaw_angle,2)+0.04 ):
+                    # yaw_diff = self.yaw_angle - self.vehicle_local_position.heading*np.sign(self.vehicle_local_position.heading)
+
+                    # if ( yaw_diff < -0.2 ) or ( yaw_diff > 0.2 ) :
+                    #     yaw_diff = np.sign(yaw_diff)*0.5
+                    # else:
+                    #     yaw_diff = np.sign(yaw_diff)*0.1
+
+                    # intermittent_yaw = self.vehicle_local_position.heading + yaw_diff*np.sign(self.vehicle_local_position.heading)
+                    intermittent_yaw = self.adjust_angle(self.vehicle_local_position.heading, self.yaw_angle)
+
+                    adjusted_x = self.adjust_position(self.vehicle_local_position.x, 0.00)
+                    adjusted_y = self.adjust_position(self.vehicle_local_position.y, 0.00)
+
+                    self.publish_position_setpoint("position", adjusted_x, adjusted_y, self.takeoff_height,intermittent_yaw)
+                    self.get_logger().info(f"rotating - {round(self.vehicle_local_position.heading,2)} - {round(self.yaw_angle,2)} - {round(intermittent_yaw,2)} - {round(adjusted_x,2)} - {round(adjusted_y,2)} - {self.vehicle_local_position.x} - {self.vehicle_local_position.y} - {self.vehicle_local_position.z}")
                 #     self.publish_offboard_control_heartbeat_signal("rotate")
                 #     self.publish_position_setpoint("rotate", 0.0, 0.0, self.takeoff_height,self.yaw_angle)
-                elif self.z_achieved and round(self.vehicle_local_position.heading,2) == round(self.yaw_angle,2) :
+                elif self.z_achieved and round(self.vehicle_local_position.heading,2) > round(self.yaw_angle,2)-0.04 and round(self.vehicle_local_position.heading,2) < round(self.yaw_angle,2)+0.04 :
                     self.get_logger().info(f"{self.square_check} {self.vehicle_local_position.heading} rotate completed - {self.vehicle_local_position.x} - {self.vehicle_local_position.y} - {self.vehicle_local_position.z}")
                     self.square_check += 1
                     # if ( self.forward_distance_x - self.vehicle_local_position.x ) >= 0  and abs(self.yaw_angle) == 1.57079:
@@ -807,22 +927,22 @@ class OffboardControl(Node):
                     # elif ( self.forward_distance_x - self.vehicle_local_position.x ) < 0  and abs(self.yaw_angle) == 1.57079 :
                     #     self.yaw_angle = 3.14158
                     self.get_logger().info(f"Before : {( self.forward_distance_y - self.vehicle_local_position.y )} - {self.yaw_angle}")
-                    if self.actual_angle == -1.57079 :
+                    if self.actual_angle == -self.start_angle :
                         if ( self.forward_distance_x - self.vehicle_local_position.x ) >= 0 :
                             self.actual_angle += 1.57079
                         elif ( self.forward_distance_x - self.vehicle_local_position.x ) < 0 :
                             self.actual_angle-= 1.57079
-                    elif self.actual_angle == 1.57079 :
+                    elif self.actual_angle == self.start_angle :
                         if ( self.forward_distance_x - self.vehicle_local_position.x ) >= 0 :
                             self.actual_angle -= 1.57079
                         elif ( self.forward_distance_x - self.vehicle_local_position.x ) < 0 :
                             self.actual_angle += 1.57079
-                    elif self.actual_angle == 4.71237 :
+                    elif self.actual_angle == self.start_angle*2 :
                         if ( self.forward_distance_x - self.vehicle_local_position.x ) >= 0 :
                             self.actual_angle += 1.57079
                         elif ( self.forward_distance_x - self.vehicle_local_position.x ) < 0 :
                             self.actual_angle -= 1.57079
-                    elif self.actual_angle == -4.71237 :
+                    elif self.actual_angle == -self.start_angle*2 :
                         if ( self.forward_distance_x - self.vehicle_local_position.x ) >= 0 :
                             self.actual_angle -= 1.57079
                         elif ( self.forward_distance_x - self.vehicle_local_position.x ) < 0 :
@@ -845,8 +965,8 @@ class OffboardControl(Node):
                     self.get_logger().info(f"After : {( self.forward_distance_y - self.vehicle_local_position.y )} - {self.yaw_angle} - {self.actual_angle_difference} - {self.actual_angle}")
                     self.forward_obstract_distance[1] = 0.0
                     self.forward_obstract_distance[2] = 0.0
-                    self.intermittent_distance_x = self.vehicle_local_position.x
-                    self.intermittent_distance_y = self.vehicle_local_position.y
+                    self.intermittent_distance_x = 0.001
+                    self.intermittent_distance_y = 0.001
                     self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
                     # time.sleep(30)
 
@@ -856,9 +976,31 @@ class OffboardControl(Node):
                 exit(0)
             elif self.vehicle_status.nav_state == VehicleStatus.NAVIGATION_STATE_OFFBOARD and self.square_check == 1:
 
+                # yaw_diff = self.yaw_angle - self.vehicle_local_position.heading*np.sign(self.vehicle_local_position.heading)
+
+                # if ( yaw_diff < -0.2 ) or ( yaw_diff > 0.2 ) :
+                #     yaw_diff = np.sign(yaw_diff)*0.5
+                # else:
+                #     yaw_diff = np.sign(yaw_diff)*0.1
+
+                # intermittent_yaw = self.vehicle_local_position.heading + yaw_diff*np.sign(self.vehicle_local_position.heading)
+                intermittent_yaw = self.adjust_angle(self.vehicle_local_position.heading, self.yaw_angle)
+
                 if ( not self.x_achieved ) and ( not self.x_rotate_achieved ) and ( round(self.vehicle_local_position.heading,2) < round(self.yaw_angle,2)-0.005 or round(self.vehicle_local_position.heading,2) > round(self.yaw_angle,2)+0.005 ):
-                    self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
-                    self.get_logger().info(f"x rotating - {self.vehicle_local_position.heading} - {self.vehicle_local_position.x} - {self.vehicle_local_position.y} - {self.vehicle_local_position.z}")
+                    yaw_diff = self.yaw_angle - self.vehicle_local_position.heading
+
+                    # if ( yaw_diff < -0.2 ) or ( yaw_diff > 0.2 ) :
+                    #     yaw_diff = np.sign(yaw_diff)*0.5
+                    # else:
+                    #     yaw_diff = np.sign(yaw_diff)*0.1
+
+                    # intermittent_yaw = self.vehicle_local_position.heading + yaw_diff
+
+                    adjusted_x = self.adjust_position(self.vehicle_local_position.x,self.intermittent_distance_x)
+                    adjusted_y = self.adjust_position(self.vehicle_local_position.y,self.intermittent_distance_y)
+
+                    self.publish_position_setpoint("position", adjusted_x, adjusted_y, self.takeoff_height,intermittent_yaw)
+                    self.get_logger().info(f"x rotating - {round(self.wrap_to_2pi(self.vehicle_local_position.heading),2)} - {round(self.vehicle_local_position.heading,2)} - {round(self.yaw_angle,2)} - {round(intermittent_yaw,2)} - {round(adjusted_x,2)} - {round(adjusted_y,2)} - {self.vehicle_local_position.x} - {self.vehicle_local_position.y} - {self.vehicle_local_position.z}")
                 #     self.publish_offboard_control_heartbeat_signal("rotate")
                 #     self.publish_position_setpoint("rotate", self.vehicle_local_position.x, self.vehicle_local_position.y, self.takeoff_height,self.yaw_angle)
                 elif ( not self.x_achieved ) and ( not self.x_rotate_achieved ) and round(self.vehicle_local_position.heading,2) > round(self.yaw_angle,2)-0.005 and round(self.vehicle_local_position.heading,2) < round(self.yaw_angle,2)+0.005 :
@@ -879,11 +1021,11 @@ class OffboardControl(Node):
                     self.intermittent_distance_x = self.vehicle_local_position.x+x_diff
                     self.intermittent_distance_y = self.vehicle_local_position.y+y_diff
 
-                    self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height, self.yaw_angle)
-                    self.get_logger().info(f'x Going towards mid point using both x and y - {self.intermittent_distance_x} - {self.intermittent_distance_y}')
+                    self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height, intermittent_yaw)
+                    self.get_logger().info(f'x Going towards mid point using both x and y - {round(self.vehicle_local_position.heading,2)} - {round(self.yaw_angle,2)} - {round(intermittent_yaw,2)} - {self.intermittent_distance_x} - {self.intermittent_distance_y}- {self.vehicle_local_position.x} - {self.vehicle_local_position.y} - {self.vehicle_local_position.z}')
 
                 elif ( not self.x_achieved ) and self.x_rotate_achieved and self.forward_obstract_distance[1] != 0.0 and self.forward_obstract_distance[2] != 0.0 and round(self.vehicle_local_position.x,2) > round(self.forward_obstract_distance[1],2) - 0.25 and round(self.vehicle_local_position.x,2) < round(self.forward_obstract_distance[1],2) + 0.25 and round(self.vehicle_local_position.y,2) > round(self.forward_obstract_distance[2],2) - 0.25 and round(self.vehicle_local_position.y,2) < round(self.forward_obstract_distance[2],2) + 0.25:
-                    self.get_logger().info(f'x Achieved at mid point using both x and y, obstacle ahead - {self.vehicle_local_position.x} - {self.vehicle_local_position.y}')
+                    self.get_logger().info(f'x Achieved at mid point using both x and y, obstacle ahead - {round(self.vehicle_local_position.heading,2)} - {round(self.yaw_angle,2)} - {self.vehicle_local_position.x} - {self.vehicle_local_position.y}')
                     if not self.check_destination( "x" ) :
                         self.forward_obstract_distance[0] = "x"
                         self.obstacle_found = True
@@ -896,11 +1038,11 @@ class OffboardControl(Node):
 
                     self.intermittent_distance_x = self.vehicle_local_position.x+x_diff
                     
-                    self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
-                    self.get_logger().info(f'x Going towards mid point using x - {self.intermittent_distance_x} - {self.intermittent_distance_y}')
+                    self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,intermittent_yaw)
+                    self.get_logger().info(f'x Going towards mid point using x - {round(self.vehicle_local_position.heading,2)} - {round(self.yaw_angle,2)} - {round(intermittent_yaw,2)} - {self.intermittent_distance_x} - {self.intermittent_distance_y}')
 
                 elif ( not self.x_achieved ) and self.x_rotate_achieved and self.forward_obstract_distance[1] != 0.0 and self.forward_obstract_distance[2] == 0.0 and ( round(self.vehicle_local_position.x,2) > round(self.forward_obstract_distance[1],2)-0.25 and round(self.vehicle_local_position.x,2) < round(self.forward_obstract_distance[1],2)+0.25 ) :
-                    self.get_logger().info(f'x Achieved at mid point using x, obstacle ahead - {self.vehicle_local_position.x} - {self.vehicle_local_position.y}')
+                    self.get_logger().info(f'x Achieved at mid point using x, obstacle ahead - {round(self.vehicle_local_position.heading,2)} - {round(self.yaw_angle,2)} - {self.vehicle_local_position.x} - {self.vehicle_local_position.y}')
                     if not self.check_destination( "x" ) :
                         self.forward_obstract_distance[0] = "x"
                         self.obstacle_found = True
@@ -913,8 +1055,8 @@ class OffboardControl(Node):
 
                     self.intermittent_distance_x = self.vehicle_local_position.x+x_diff
 
-                    self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,self.yaw_angle)
-                    self.get_logger().info(f'x Going towards required x - {self.intermittent_distance_x} - {self.intermittent_distance_y}')
+                    self.publish_position_setpoint("position", self.intermittent_distance_x, self.intermittent_distance_y, self.takeoff_height,intermittent_yaw)
+                    self.get_logger().info(f'x Going towards required x - {round(self.vehicle_local_position.heading,2)} - {round(self.yaw_angle,2)} - {round(intermittent_yaw,2)} - {self.intermittent_distance_x} - {self.intermittent_distance_y}')
 
                 elif ( not self.x_achieved ) and self.x_rotate_achieved and self.forward_obstract_distance[1] == 0.0 and self.forward_obstract_distance[2] == 0.0 and ( round(self.vehicle_local_position.x,2) > round(self.forward_distance_x,2)-0.25 and round(self.vehicle_local_position.x,2) < round(self.forward_distance_x,2)+0.25 ) :
                     self.get_logger().info(f"x {self.square_check} square completed - {self.vehicle_local_position.x} - {self.vehicle_local_position.y} - {self.vehicle_local_position.z}")
@@ -981,7 +1123,7 @@ class OffboardControl(Node):
                         self.y_achieved = False
                         self.y_rotate_achieved = False
                         self.forward_distance_x, self.forward_distance_y, self.takeoff_height = self.traverse_coordinates_queue.get()
-                        self.get_logger().info(f"New Position has been set to traverse - {self.forward_distance_x} - {self.forward_distance_y} - {self.takeoff_height}")
+                        self.get_logger().info(f"New Position has been set to traverse - {round(self.vehicle_local_position.heading,2)} - {round(self.yaw_angle,2)} - {self.forward_distance_x} - {self.forward_distance_y} - {self.takeoff_height}")
                     else :
                         self.land()
                         convert( self.log_file_name )

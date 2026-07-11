@@ -21,7 +21,7 @@ class CoordinatesPublisher(Node):
         self.publisher_ = self.create_publisher(TraverseCoordinates, '/traverse_coordinates_topic', 10)
 
         # Publish at a fixed rate
-        self.timer = self.create_timer(0.1, self.check_for_file_update)
+        self.timer = self.create_timer(0.01, self.check_for_file_update)
     
     def is_matrix_empty(self):
         """Checks if the matrix is empty (0×0)."""

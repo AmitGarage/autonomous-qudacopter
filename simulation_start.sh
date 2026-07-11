@@ -1,9 +1,14 @@
 #!/bin/bash
 
 # cd /home/amit-singh/Downloads/qudacopter/jMAVSim/PX4-Autopilot
+# export PX4_GZ_MODEL_POSE="x,y,z,roll,pitch,yaw"
+# export PX4_GZ_MODEL_POSE="0,0,0,0,0,-3.14"
 # make px4_sitl gz_x500_lidar_2d_home > log/start_sim_script.log &
 
 # sleep 5
+
+
+rm -f /home/amit-singh/Downloads/qudacopter/autonomous-qudacopter/log/start_script.log
 
 # Source the ROS 2 setup file
 source /opt/ros/jazzy/setup.bash
@@ -37,7 +42,8 @@ sleep 1
 
 cd ros2_ws
 
-ros2 run ros_gz_bridge parameter_bridge /scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan &
+# ros2 run ros_gz_bridge parameter_bridge /scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan &
+ros2 run ros_gz_bridge parameter_bridge /world/home/model/x500_lidar_2d_0/link/lidar_link/sensor/lidar/scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan --ros-args -r /world/home/model/x500_lidar_2d_0/link/lidar_link/sensor/lidar/scan:=/scan &
 
 sleep 1
 
@@ -61,18 +67,23 @@ sleep 1
 # ros2 launch slam_toolbox online_async_launch.py use_sim_time:=True
 
 # Second ROS 2 Python command
-ros2 launch traverse_coordinates coordinates_publisher.launch.py > ../log/start_script.log &
 
-sleep 2
+# ros2 launch rf2o_laser_odometry rf2o_laser_odometry.launch.py > ../log/start_script.log &
 
-ros2 launch odometry_transformer odometry_transform.launch.py >> ../log/start_script.log &
+# sleep 2
 
-sleep 2
+ros2 launch traverse_coordinates coordinates_publisher.launch.py >> ../log/start_script.log &
+
+sleep 5
 
 ros2 launch slam_toolbox online_async_launch.py >> ../log/start_script.log &
 
+sleep 5
+
+ros2 launch odometry_transformer odometry_transform.launch.py >> ../log/start_script.log &
+
 # ros2 run rviz2 rviz2 &
 
-sleep 2
+sleep 5
 
 ros2 launch offboard offboard_control_traverse.launch.py &

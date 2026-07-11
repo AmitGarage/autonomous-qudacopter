@@ -11,6 +11,7 @@ find_package(rclcpp REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(px4_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(px4_ros_com REQUIRED)
 find_package(tf2_ros REQUIRED)
@@ -21,7 +22,7 @@ find_package(tf2_ros REQUIRED)
 # ament_target_dependencies(px4_to_pose rclcpp px4_ros_com px4_msgs geometry_msgs)
 
 add_executable(px4_tf_broadcaster src/px4_tf_broadcaster.cpp)
-ament_target_dependencies(px4_tf_broadcaster rclcpp px4_msgs px4_ros_com sensor_msgs nav_msgs tf2_ros geometry_msgs)
+ament_target_dependencies(px4_tf_broadcaster rclcpp px4_msgs px4_ros_com sensor_msgs nav_msgs tf2_ros geometry_msgs tf2_geometry_msgs)
 
 install(TARGETS px4_tf_broadcaster 
     DESTINATION lib/${PROJECT_NAME})

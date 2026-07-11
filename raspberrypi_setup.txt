@@ -80,7 +80,7 @@ rpicam commands
 	- rpicam-still -t 3000 -o test.jpg
 	- rpicam-vid -t 10000 -o test.mp4
 
-ps -ef | grep ros2 | awk '{print $2}' | xargs kill -${2:-'TERM'}
+ps -ef | grep -E "gz|ros2|8888" | grep -v grep | awk '{print $2}' | xargs kill -${2:-'TERM'}
 
 1. Enable Range Finder (EKF2_RNG_CTRL):
 Ensure the range finder is enabled by setting the EKF2_RNG_CTRL parameter to a non-zero value. 
@@ -112,3 +112,4 @@ You might also want to enable GPS or barometer for additional height information
 - Need to generate lidar odometry
 	- using rf2o_laser_odometry
 - SYS_HAS_MAG = 0 for compass 0 error
+- sudo apt install ros-jazzy-tf2-geometry-msgs
