@@ -16,6 +16,10 @@ launch_terminal() {
     echo "Launched terminal with PGID $pgid"
 }
 
+rm -f ${BASE_DIR}/log/term1.log
+rm -f ${BASE_DIR}/log/term2.log
+rm -f ${BASE_DIR}/log/term3.log
+
 # Terminal 1
 launch_terminal "echo 'Terminal 1: Running simulator'; cd /home/amit-singh/Downloads/qudacopter/jMAVSim/PX4-Autopilot; export PX4_GZ_MODEL_POSE="5,5,0,0,0,0"; make px4_sitl gz_x500_lidar_2d_home | tee ${BASE_DIR}/log/term1.log"
 
@@ -52,5 +56,6 @@ if [[ "$input" == "e" ]]; then
         ps -ef | grep -E "gz|ros2|8888" | grep -v grep | awk '{print $2}' | xargs kill -${2:-'TERM'} 2>/dev/null
         kill -9 -"$pgid" 2>/dev/null
     done
+    ps -ef | grep -E "gz|ros2|8888" | grep -v grep | awk '{print $2}' | xargs kill -${2:-'TERM'}
     echo "All spawned terminals killed."
 fi

@@ -42,8 +42,8 @@ sleep 1
 
 cd ros2_ws
 
-# ros2 run ros_gz_bridge parameter_bridge /scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan &
-ros2 run ros_gz_bridge parameter_bridge /world/home/model/x500_lidar_2d_0/link/lidar_link/sensor/lidar/scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan --ros-args -r /world/home/model/x500_lidar_2d_0/link/lidar_link/sensor/lidar/scan:=/scan &
+ros2 run ros_gz_bridge parameter_bridge /scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan &
+# ros2 run ros_gz_bridge parameter_bridge /world/home/model/x500_lidar_2d_0/link/lidar_link/sensor/lidar/scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan &
 
 sleep 1
 
