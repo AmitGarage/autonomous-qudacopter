@@ -193,6 +193,9 @@ private:
         // Eigen::Quaterniond q_ned = px4_ros_com::frame_transforms::ned_to_enu_orientation(q);
         // Eigen::Quaterniond q_enu_aircraft = px4_ros_com::frame_transforms::baselink_to_aircraft_orientation(q_ned);
 
+        latest_px4_q_ = msg->q;
+        has_px4_q_ = true;
+
         // --- Position conversion (NED → ENU) ---
         Eigen::Vector3d pos_ned(msg->position[0], msg->position[1], msg->position[2]);
         Eigen::Vector3d pos_enu(pos_ned.y(), pos_ned.x(), -pos_ned.z());
@@ -754,9 +757,13 @@ private:
 
             last_slam_pose_.timestamp = now.nanoseconds() / 1000;
             last_slam_pose_.timestamp_sample = last_slam_pose_.timestamp;
-            last_slam_pose_.position[0] = last_slam_pose_.position[0]+last_addition;
+            // last_slam_pose_.position[0] = last_slam_pose_.position[0]+last_addition;
 
-            last_addition = -1*last_addition;
+            // last_addition = -1*last_addition;
+
+            if (has_px4_q_) {
+                last_slam_pose_.q = latest_px4_q_;
+            }
 
             last_slam_pose_time_ = this->get_clock()->now();
             has_slam_pose_ = true;
@@ -798,6 +805,9 @@ private:
     Eigen::Quaterniond prev_q_enu_;
     rclcpp::Time prev_time_;
     bool has_prev_ = false;
+
+    std::array<float, 4> latest_px4_q_ = {0.0f, 0.0f, 0.0f, 1.0f};
+    bool has_px4_q_ = false;
 
     rclcpp::TimerBase::SharedPtr publisher_timer_;
     // geometry_msgs::msg::PoseWithCovarianceStamped last_slam_pose_;
