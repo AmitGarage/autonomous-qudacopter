@@ -43,7 +43,7 @@ sleep 1
 cd ros2_ws
 
 ros2 run ros_gz_bridge parameter_bridge /scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan &
-# ros2 run ros_gz_bridge parameter_bridge /world/home/model/x500_lidar_2d_0/link/lidar_link/sensor/lidar/scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan &
+# ros2 run ros_gz_bridge parameter_bridge /world/home/model/x500_lidar_2d_0/link/link/sensor/lidar_2d_v2/scan@sensor_msg/msg/LaserScan@gz.msgs.LaserScan &
 
 sleep 1
 
@@ -86,4 +86,5 @@ ros2 launch odometry_transformer odometry_transform.launch.py >> ../log/start_sc
 
 sleep 5
 
-ros2 launch offboard offboard_control_traverse.launch.py &
+# ros2 launch offboard offboard_control_traverse.launch.py &
+ros2 launch offboard offboard_control.launch.py &

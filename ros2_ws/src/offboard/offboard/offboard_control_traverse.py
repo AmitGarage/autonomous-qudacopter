@@ -64,26 +64,33 @@ class OffboardControl(Node):
         self.get_logger().info("Node Initialized.") # Use ROS2 logger for general info
 
         # Configure QoS profile for publishing and subscribing
-        qos_profile = QoSProfile(
+        qos_profile_pub = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
             durability=DurabilityPolicy.TRANSIENT_LOCAL,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=1
+        )
+        
+        qos_profile_sub = QoSProfile(
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            durability=DurabilityPolicy.VOLATILE,
             history=HistoryPolicy.KEEP_LAST,
             depth=1
         )
 
         # Create publishers
         self.offboard_control_mode_publisher = self.create_publisher(
-            OffboardControlMode, '/fmu/in/offboard_control_mode', qos_profile)
+            OffboardControlMode, '/fmu/in/offboard_control_mode', qos_profile_pub)
         self.trajectory_setpoint_publisher = self.create_publisher(
-            TrajectorySetpoint, '/fmu/in/trajectory_setpoint', qos_profile)
+            TrajectorySetpoint, '/fmu/in/trajectory_setpoint', qos_profile_pub)
         self.vehicle_command_publisher = self.create_publisher(
-            VehicleCommand, '/fmu/in/vehicle_command', qos_profile)
+            VehicleCommand, '/fmu/in/vehicle_command', qos_profile_pub)
 
         # Create subscribers
         self.vehicle_local_position_subscriber = self.create_subscription(
-            VehicleLocalPosition, '/fmu/out/vehicle_local_position', self.vehicle_local_position_callback, qos_profile)
+            VehicleLocalPosition, '/fmu/out/vehicle_local_position_v1', self.vehicle_local_position_callback, qos_profile_sub)
         self.vehicle_status_subscriber = self.create_subscription(
-            VehicleStatus, '/fmu/out/vehicle_status', self.vehicle_status_callback, qos_profile)
+            VehicleStatus, '/fmu/out/vehicle_status_v1', self.vehicle_status_callback, qos_profile_sub)
         # Creating lidar sensor subscriber
         self.lidar_2d_subscription = self.create_subscription(
             LaserScan, lidar_topic_name, self.obstacle_distance_callback, 10)
@@ -112,6 +119,7 @@ class OffboardControl(Node):
         self.obstract_distance_x = 0.0
         self.obstract_distance_y = 0.0
         self.obstract_distance_z = 0.0
+        self.arm_cmd_ticks = 0
         # self.current_heading = 0.0
         self.z_achieved = False
         self.x_achieved = False
@@ -141,7 +149,7 @@ class OffboardControl(Node):
         # self.fig, self.ax = plt.subplots()
 
         # Create a timer to publish control commands
-        self.timer = self.create_timer(0.01, self.timer_callback)
+        self.timer = self.create_timer(0.02, self.timer_callback)
 
     def traverse_coordinates_callback(self, traverse_coordinates_msg):
         # self.traverse_coordinates_queue
@@ -694,8 +702,9 @@ class OffboardControl(Node):
 
     def engage_offboard_mode(self):
         """Switch to offboard mode."""
+        timestamp = int(self.get_clock().now().nanoseconds / 1000)
         self.publish_vehicle_command(
-            VehicleCommand.VEHICLE_CMD_DO_SET_MODE, param1=1.0, param2=6.0)
+            VehicleCommand.VEHICLE_CMD_DO_SET_MODE, param1=1.0, param2=6.0, target_system = 1, target_component = 1, source_system = 1, source_component = 1, from_external = True, timestamp = timestamp)
         self.get_logger().info("Switching to offboard mode")
 
     def land(self):
@@ -752,6 +761,7 @@ class OffboardControl(Node):
             msg.yaw = yaw_angle
         msg.timestamp = int(self.get_clock().now().nanoseconds / 1000)
         self.trajectory_setpoint_publisher.publish(msg)
+        # self.get_logger().info(f'trajectory_setpoint_publisher set : {msg}') 
 
     def publish_vehicle_command(self, command, **params) -> None:
         """Publish a vehicle command."""
@@ -878,11 +888,23 @@ class OffboardControl(Node):
     def timer_callback(self) -> None:
         """Callback function for the timer."""
         self.publish_offboard_control_heartbeat_signal("position")
-        self.get_logger().info(f"started - ")
+
+        # Keep publishing a valid hold setpoint while waiting for PX4 to accept OFFBOARD.
+        # self.publish_position_setpoint("position",0.0,0.0,0.0,1.57)
+        # self.get_logger().info(f"started - ")
 
         if self.offboard_setpoint_counter == 11:
-            self.engage_offboard_mode()
-            self.arm()
+            self.publish_position_setpoint("position",self.vehicle_local_position.x,self.vehicle_local_position.y,self.vehicle_local_position.z,self.vehicle_local_position.heading)
+            self.arm_cmd_ticks += 1
+        # if self.arm_cmd_ticks >= 50:
+            # if not self.vehicle_local_position.xy_valid:
+            #     self.get_logger().info(f"Waiting for valid local position - {self.vehicle_local_position.xy_valid}")
+            if self.vehicle_status.nav_state != VehicleStatus.NAVIGATION_STATE_OFFBOARD:
+                self.engage_offboard_mode()
+            else:
+                self.get_logger().info(f"Already in offboard mode - {self.vehicle_status.nav_state}")
+                self.arm()
+                # self.arm_cmd_ticks = 0
             # if self.vehicle_status.arming_state == VehicleStatus.ARMING_STATE_ARMED :
             #     self.armed = True
             # if self.armed :
@@ -1346,6 +1368,7 @@ class OffboardControl(Node):
                         exit(0)
 
         if self.offboard_setpoint_counter < 11:
+            self.publish_position_setpoint("position",self.vehicle_local_position.x,self.vehicle_local_position.y,self.vehicle_local_position.z,self.vehicle_local_position.heading)
             self.offboard_setpoint_counter += 1
 
     def check_destination( self, direction ) :
