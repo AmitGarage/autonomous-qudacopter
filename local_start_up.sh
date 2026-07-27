@@ -22,7 +22,7 @@ rm -f ${BASE_DIR}/log/term3.log
 
 # Terminal 1
 # ; export PX4_GZ_MODEL_POSE="5,5,0,0,0,0"
-launch_terminal "echo 'Terminal 1: Running simulator'; cd /home/amit-singh/Downloads/qudacopter/jMAVSim/v117/PX4-Autopilot; export GZ_SIM_RESOURCE_PATH="/home/amit-singh/Downloads/qudacopter/jMAVSim/v117/PX4-Autopilot/Tools/simulation/gz/models"; make px4_sitl gz_x500_lidar_2d_home | tee ${BASE_DIR}/log/term1.log"
+launch_terminal "echo 'Terminal 1: Running simulator'; cd /home/amit-singh/Downloads/qudacopter/autonomous-qudacopter/PX4-Autopilot; export GZ_SIM_RESOURCE_PATH="/home/amit-singh/Downloads/qudacopter/autonomous-qudacopter/PX4-Autopilot/Tools/simulation/gz/models"; make px4_sitl gz_x500_lidar_2d_home | tee ${BASE_DIR}/log/term1.log"
 
 # launch_terminal "echo 'Terminal 1: Running simulator'; cd /home/amit-singh/Downloads/qudacopter/jMAVSim/PX4-Autopilot; export GZ_SIM_RESOURCE_PATH="/home/amit-singh/Downloads/qudacopter/jMAVSim/PX4-Autopilot/Tools/simulation/gz/models"; make px4_sitl gz_x500_lidar_2d_home | tee ${BASE_DIR}/log/term1.log"
 
