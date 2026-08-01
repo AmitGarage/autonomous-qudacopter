@@ -21,10 +21,17 @@ def generate_launch_description():
         #     output='screen',
         # ),
 
+        # Node(
+        #     package='odometry_transformer',
+        #     executable='px4_tf_broadcaster',
+        #     name='px4_scan_tf_broadcaster',
+        #     parameters=[params_file],
+        #     output='screen',
+        # )
         Node(
             package='odometry_transformer',
-            executable='px4_tf_broadcaster',
-            name='px4_scan_tf_broadcaster',
+            executable='odom_transform',
+            name='odom_transform',
             parameters=[params_file],
             output='screen',
         )

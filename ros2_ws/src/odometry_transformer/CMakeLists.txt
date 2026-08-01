@@ -21,10 +21,16 @@ find_package(tf2_ros REQUIRED)
 # ament_target_dependencies(odometry_transformer rclcpp nav_msgs px4_ros_com px4_msgs geometry_msgs)
 # ament_target_dependencies(px4_to_pose rclcpp px4_ros_com px4_msgs geometry_msgs)
 
-add_executable(px4_tf_broadcaster src/px4_tf_broadcaster.cpp)
-ament_target_dependencies(px4_tf_broadcaster rclcpp px4_msgs px4_ros_com sensor_msgs nav_msgs tf2_ros geometry_msgs tf2_geometry_msgs)
+# add_executable(px4_tf_broadcaster src/px4_tf_broadcaster.cpp)
+# ament_target_dependencies(px4_tf_broadcaster rclcpp px4_msgs px4_ros_com sensor_msgs nav_msgs tf2_ros geometry_msgs tf2_geometry_msgs)
 
-install(TARGETS px4_tf_broadcaster 
+# install(TARGETS px4_tf_broadcaster 
+#     DESTINATION lib/${PROJECT_NAME})
+
+add_executable(odom_transform src/odom_transform.cpp)
+ament_target_dependencies(odom_transform rclcpp px4_msgs px4_ros_com sensor_msgs nav_msgs tf2_ros geometry_msgs tf2_geometry_msgs)
+
+install(TARGETS odom_transform 
     DESTINATION lib/${PROJECT_NAME})
 
 # install(TARGETS odometry_transformer
